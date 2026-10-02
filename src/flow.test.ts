@@ -38,7 +38,7 @@ beforeAll(async () => {
             application_type: 'native',
             token_endpoint_auth_method: 'none',
             redirect_uris: [REDIRECT_URI],
-            grant_types: ['authorization_code'],
+            grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code']
           }
         ]
@@ -225,5 +225,86 @@ describe('UserInfo', () => {
     } finally {
       ACCOUNTS.alice = saved;
     }
+  });
+});
+
+async function tokenRequest(params: Record<string, string>): Promise<Response> {
+  return fetch(`${server.baseUrl}/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: 'app', ...params })
+  });
+}
+
+interface Tokens {
+  access_token: string;
+  refresh_token?: string;
+  error?: string;
+}
+
+async function offlineTokens(): Promise<Tokens> {
+  host = signInAlice;
+  const { redirect, verifier } = await authorize(new Browser(server.baseUrl), {
+    scope: 'openid offline_access',
+    prompt: 'consent'
+  });
+  return (await (await exchange(redirect.searchParams.get('code')!, verifier)).json()) as Tokens;
+}
+
+async function refresh(refreshToken: string): Promise<{ status: number; body: Tokens }> {
+  const response = await tokenRequest({ grant_type: 'refresh_token', refresh_token: refreshToken });
+  return { status: response.status, body: (await response.json()) as Tokens };
+}
+
+describe('refresh token rotation', () => {
+  it('issues a new refresh token on every use', async () => {
+    const first = await offlineTokens();
+    expect(first.refresh_token).toBeTruthy();
+
+    const second = await refresh(first.refresh_token!);
+    expect(second.status).toBe(200);
+    expect(second.body.refresh_token).toBeTruthy();
+    expect(second.body.refresh_token).not.toBe(first.refresh_token);
+  });
+
+  it('revokes the whole grant when a used refresh token is presented again', async () => {
+    const first = await offlineTokens();
+    const second = await refresh(first.refresh_token!);
+    expect(second.status).toBe(200);
+
+    const replay = await refresh(first.refresh_token!);
+    expect(replay.status).toBe(400);
+    expect(replay.body.error).toBe('invalid_grant');
+
+    // The thief's replay also cuts off the legitimate holder: every token of the grant is gone.
+    expect((await refresh(second.body.refresh_token!)).status).toBe(400);
+    expect((await userinfo(second.body.access_token)).status).toBe(401);
+    expect((await userinfo(first.access_token)).status).toBe(401);
+  });
+
+  it('carries acr and amr through a refresh', async () => {
+    const first = await offlineTokens();
+    const second = await refresh(first.refresh_token!);
+    const claims = (await (await userinfo(second.body.access_token)).json()) as Record<
+      string,
+      unknown
+    >;
+    expect(claims).toMatchObject({ acr: 'aal2', amr: ['pwd', 'otp'] });
+  });
+});
+
+describe('authorization code reuse', () => {
+  it('refuses a second exchange and revokes the tokens the first one issued', async () => {
+    host = signInAlice;
+    const { redirect, verifier } = await authorize(new Browser(server.baseUrl));
+    const code = redirect.searchParams.get('code')!;
+
+    const first = (await (await exchange(code, verifier)).json()) as Tokens;
+    expect(first.access_token).toBeTruthy();
+
+    const second = await exchange(code, verifier);
+    expect(second.status).toBe(400);
+    expect(((await second.json()) as Tokens).error).toBe('invalid_grant');
+    expect((await userinfo(first.access_token)).status).toBe(401);
   });
 });

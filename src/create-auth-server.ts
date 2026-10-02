@@ -36,7 +36,7 @@ function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | u
  *
  * Fixed, not configurable: authorization code flow only, PKCE required for every client
  * (node-oidc-provider accepts S256 only), the provider's development login pages off, and token
- * ids hashed before they reach the host's storage.
+ * ids hashed before they reach the host's storage, and refresh tokens rotated on every use.
  */
 export function createAuthServer(options: AuthServerOptions): AuthServer {
   assertSafeOptions(options);
@@ -75,6 +75,8 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
       };
     },
     responseTypes: ['code'],
+    // Every refresh issues a new refresh token; presenting a used one revokes the whole grant.
+    rotateRefreshToken: true,
     ttl: {
       AccessToken: ttl.accessToken,
       AuthorizationCode: ttl.authorizationCode,
