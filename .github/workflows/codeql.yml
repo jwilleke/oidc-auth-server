@@ -1,5 +1,11 @@
 # Static security analysis. This package is an authorization server, so it is
 # scanned on every push and pull request, not only on a schedule.
+#
+# Results are not uploaded to GitHub code scanning: it is not enabled for this
+# private repository (it needs a Code Security licence), and an upload that
+# fails hides every finding. Instead the job reads the SARIF itself and fails
+# on any result, so a finding blocks the change and shows in the run log.
+# See https://github.com/jwilleke/oidc-auth-server/issues/16.
 
 name: CodeQL
 
@@ -11,7 +17,7 @@ on:
 
 permissions:
   contents: read
-  security-events: write
+  actions: read
 
 jobs:
   analyze:
@@ -29,3 +35,37 @@ jobs:
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
+        with:
+          upload: never
+          output: sarif-results
+
+      - name: Keep the SARIF for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-sarif
+          path: sarif-results
+          if-no-files-found: warn
+
+      - name: Fail on findings
+        run: |
+          node --input-type=module -e "
+          import { readdirSync, readFileSync } from 'node:fs';
+          const files = readdirSync('sarif-results').filter((f) => f.endsWith('.sarif'));
+          if (files.length === 0) { console.log('::error::no SARIF produced; the scan did not run'); process.exit(1); }
+          let count = 0;
+          for (const file of files) {
+            const sarif = JSON.parse(readFileSync('sarif-results/' + file, 'utf8'));
+            for (const run of sarif.runs) {
+              for (const result of run.results ?? []) {
+                count++;
+                const loc = result.locations?.[0]?.physicalLocation;
+                const path = loc?.artifactLocation?.uri ?? '?';
+                const line = loc?.region?.startLine ?? 1;
+                console.log('::error file=' + path + ',line=' + line + '::' + result.ruleId + ': ' + result.message.text);
+              }
+            }
+          }
+          console.log(count === 0 ? 'CodeQL: no findings' : 'CodeQL: ' + count + ' finding(s)');
+          process.exit(count === 0 ? 0 : 1);
+          "
