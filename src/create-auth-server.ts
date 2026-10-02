@@ -1,5 +1,9 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import Provider, { type ClientMetadata, type Configuration } from 'oidc-provider';
+import Provider, {
+  type ClientMetadata,
+  type Configuration,
+  type KoaContextWithOIDC
+} from 'oidc-provider';
 import { defaultConfig, ttlFromConfig } from './config.js';
 import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
@@ -13,6 +17,18 @@ export interface AuthServer {
   handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
   /** Called from the host's interaction route to finish or fail sign-in and consent. */
   interactions: InteractionHelpers;
+}
+
+/**
+ * The sign-in's `acr` and `amr`, from whichever grant source the request carries — or, at
+ * UserInfo, from the access token they were copied onto. Never from the host's account claims.
+ */
+function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | undefined {
+  const { AuthorizationCode, RefreshToken, DeviceCode, AccessToken } = ctx.oidc.entities;
+  const source = AuthorizationCode ?? RefreshToken ?? DeviceCode;
+  if (source) return { acr: source.acr, amr: source.amr };
+  const extra = AccessToken?.extra as { acr?: string; amr?: string[] } | undefined;
+  return extra ? { acr: extra.acr, amr: extra.amr } : undefined;
 }
 
 /**
@@ -43,10 +59,20 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
       ...(options.scopeClaims ??
         (defaults['oidc-auth-server.scope-claims'] as Record<string, string[]>))
     },
-    findAccount: async (_ctx, sub) => {
+    // How the person signed in rides on the access token, so UserInfo can report it: the host's
+    // account lookup knows the person, not the sign-in.
+    extraTokenClaims: (ctx, token) => (token.kind === 'AccessToken' ? signInOf(ctx) : undefined),
+    findAccount: async (ctx, sub) => {
       const claims = await options.findAccount(sub);
       if (!claims) return undefined;
-      return { accountId: sub, claims: () => ({ ...claims, sub }) };
+      return {
+        accountId: sub,
+        claims: (use) => ({
+          ...claims,
+          ...(use === 'userinfo' ? signInOf(ctx) : undefined),
+          sub
+        })
+      };
     },
     responseTypes: ['code'],
     ttl: {

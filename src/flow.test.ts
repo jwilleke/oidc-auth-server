@@ -192,6 +192,12 @@ describe('UserInfo', () => {
     expect(claims.name).toBeUndefined();
   });
 
+  it('reports how the person signed in, from the access token', async () => {
+    const { access_token } = await signedInTokens('openid');
+    const claims = (await (await userinfo(access_token)).json()) as Record<string, unknown>;
+    expect(claims).toMatchObject({ sub: 'alice', acr: 'aal2', amr: ['pwd', 'otp'] });
+  });
+
   it('releases profile claims for the profile scope', async () => {
     const { access_token } = await signedInTokens('openid profile');
     const claims = (await (await userinfo(access_token)).json()) as Record<string, unknown>;
