@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Provider, { type Configuration } from 'oidc-provider';
+import { hashingAdapter } from './hashing-adapter.js';
 import { createMemoryAdapter } from './memory-adapter.js';
 import { assertSafeOptions, type AuthServerOptions } from './options.js';
 
@@ -14,13 +15,14 @@ export interface AuthServer {
  * Build a hardened node-oidc-provider. Unsafe options throw before anything listens.
  *
  * Fixed, not configurable: authorization code flow only, PKCE required for every client
- * (node-oidc-provider accepts S256 only), and the provider's development login pages off.
+ * (node-oidc-provider accepts S256 only), the provider's development login pages off, and token
+ * ids hashed before they reach the host's storage.
  */
 export function createAuthServer(options: AuthServerOptions): AuthServer {
   assertSafeOptions(options);
 
   const configuration: Configuration = {
-    adapter: options.adapter ?? createMemoryAdapter(),
+    adapter: hashingAdapter(options.adapter ?? createMemoryAdapter()),
     clients: options.clients ?? [],
     jwks: options.jwks,
     cookies: { keys: options.cookieKeys },
