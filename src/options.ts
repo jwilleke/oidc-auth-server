@@ -10,6 +10,13 @@ export interface AuthServerOptions {
   cookieKeys: string[];
   /** Statically registered clients. */
   clients?: ClientMetadata[];
+  /**
+   * Where the host renders sign-in and consent for a pending interaction. The host's route calls
+   * `interactions.finishLogin` / `finishConsent` / `fail` to continue.
+   */
+  interactionUrl: (uid: string) => string;
+  /** The `acr` values the host's sign-in can produce, advertised in discovery. */
+  acrValues?: string[];
   /** Host storage. Required outside development; see `createMemoryAdapter` for tests. */
   adapter?: AdapterFactory;
   /**
@@ -56,6 +63,10 @@ export function assertSafeOptions(options: AuthServerOptions): void {
     problems.push('cookieKeys must hold at least one key');
   } else if (cookieKeys.some((key) => key.length < MIN_COOKIE_KEY_LENGTH)) {
     problems.push(`every cookieKeys entry must be at least ${MIN_COOKIE_KEY_LENGTH} characters`);
+  }
+
+  if (typeof options.interactionUrl !== 'function') {
+    problems.push('interactionUrl must be a function');
   }
 
   if (!options.adapter && !development) {

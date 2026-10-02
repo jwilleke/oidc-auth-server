@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Provider, { type Configuration } from 'oidc-provider';
 import { hashingAdapter } from './hashing-adapter.js';
+import { interactionHelpers, type InteractionHelpers } from './interactions.js';
 import { createMemoryAdapter } from './memory-adapter.js';
 import { assertSafeOptions, type AuthServerOptions } from './options.js';
 
@@ -9,6 +10,8 @@ export interface AuthServer {
   provider: Provider;
   /** Mount this under the issuer's path in Express, Koa or a plain `http` server. */
   handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
+  /** Called from the host's interaction route to finish or fail sign-in and consent. */
+  interactions: InteractionHelpers;
 }
 
 /**
@@ -26,6 +29,11 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
     clients: options.clients ?? [],
     jwks: options.jwks,
     cookies: { keys: options.cookieKeys },
+    interactions: { url: (_ctx, interaction) => options.interactionUrl(interaction.uid) },
+    acrValues: options.acrValues ?? [],
+    // Standalone claims are issued only when a client asks for them. How the person signed in is
+    // the point of the sign-in seam, so it rides on the openid scope every ID token carries.
+    claims: { sid: null, iss: null, openid: ['sub', 'acr', 'amr', 'auth_time'] },
     responseTypes: ['code'],
     pkce: { required: () => true },
     features: {
@@ -35,5 +43,5 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   };
 
   const provider = new Provider(options.issuer, configuration);
-  return { provider, handler: provider.callback() };
+  return { provider, handler: provider.callback(), interactions: interactionHelpers(provider) };
 }
