@@ -50,6 +50,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/node": "^20.0.0",
+    "@types/oidc-provider": "^9.12.1",
     "@typescript-eslint/eslint-plugin": "^8.58.2",
     "@typescript-eslint/parser": "^8.58.2",
     "@vitest/coverage-v8": "^4.1.7",
@@ -75,5 +76,8 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jwilleke/oidc-auth-server.git"
+  },
+  "dependencies": {
+    "oidc-provider": "^9.12.2"
   }
 }
