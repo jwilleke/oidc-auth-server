@@ -1,0 +1,55 @@
+# Local, never committed — session logs, notes, credentials.
+# install-kit.sh adds this line to every downstream repo for the same reason.
+private/
+
+# Dependencies
+node_modules/
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# packages/agent-kit is assembled from the kit sources by its build.mjs — the
+# authored copies live at the repo root, so these are artifacts, never edited here.
+packages/agent-kit/bin/
+packages/agent-kit/commands/
+packages/agent-kit/templates/
+packages/agent-kit/kit-files.tsv
+packages/agent-kit/kit-version.txt
+packages/agent-kit/*.tgz
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json

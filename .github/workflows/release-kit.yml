@@ -1,0 +1,115 @@
+# Publishes @jwilleke/agent-kit whenever its version changes on master.
+#
+# No tagging, no manual publish. Bump `version` in packages/agent-kit/package.json,
+# push, and this releases it. If that version is already on the registry the job
+# reports "already published" and stops, so ordinary pushes are no-ops.
+#
+# One-time setup: an NPM_TOKEN secret holding an npm automation token with write
+# access to the @jwilleke scope. Without it the job skips rather than failing
+# every push.
+
+name: Release agent-kit
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'packages/agent-kit/**'
+      - '.claude/commands/**'
+      - 'templates/**'
+      - 'kit-files.tsv'
+      - 'bin/**'
+  workflow_dispatch:
+
+permissions:
+  # `write`, not `read`: the job now creates the GitHub release as well as
+  # publishing, and gh release create needs it.
+  contents: write
+  # Lets npm authenticate by OIDC (trusted publishing) instead of a token.
+  # Token auth is the fallback while the trusted publisher is unconfigured.
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # build.mjs stamps the kit version from `git describe`, which needs history.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1.
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Use an npm that supports trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Decide whether to publish
+        id: decide
+        run: |
+          name="$(node -p "require('./packages/agent-kit/package.json').name")"
+          version="$(node -p "require('./packages/agent-kit/package.json').version")"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
+
+          if [ -z "${{ secrets.NPM_TOKEN }}" ]; then
+            echo "NPM_TOKEN is not set — skipping the release."
+            echo "publish=false" >>"$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # `npm view` exits non-zero when the version does not exist, which is
+          # the case we want to publish in. Any other failure (network, auth)
+          # would look identical, so check the registry directly instead.
+          code="$(curl -s -o /dev/null -w '%{http_code}' "https://registry.npmjs.org/$name/$version")"
+          case "$code" in
+            200) echo "$name@$version is already published."; echo "publish=false" >>"$GITHUB_OUTPUT" ;;
+            404) echo "$name@$version is not on the registry — releasing."; echo "publish=true" >>"$GITHUB_OUTPUT" ;;
+            *)   echo "registry returned $code for $name@$version — refusing to guess" >&2; exit 1 ;;
+          esac
+
+      - name: Test
+        if: steps.decide.outputs.publish == 'true'
+        run: |
+          npm ci
+          npm test
+
+      - name: Publish
+        if: steps.decide.outputs.publish == 'true'
+        working-directory: packages/agent-kit
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # A cut is a tag, a package AND a GitHub release — AGENTS.md says so and
+      # /semver does all three. Done by hand, the third step was skipped every
+      # time: 26 tags and 1 release, so the Releases page claimed nothing had
+      # shipped since v1.1.0 while twenty-odd versions were on npm, including two
+      # security fixes. Doing it here means the three can no longer disagree.
+      - name: Create the GitHub release
+        if: steps.decide.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="v${{ steps.decide.outputs.version }}"
+
+          if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "::notice::$tag is not tagged; publishing without a release."
+            exit 0
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists."
+            exit 0
+          fi
+
+          gh release create "$tag" --title "$tag" --generate-notes --verify-tag
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.decide.outputs.publish }}" = "true" ]; then
+            echo "Published @jwilleke/agent-kit@${{ steps.decide.outputs.version }}" >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo "No release: @jwilleke/agent-kit@${{ steps.decide.outputs.version }} needs no publish" >>"$GITHUB_STEP_SUMMARY"
+          fi
