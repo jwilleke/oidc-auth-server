@@ -1,15 +1,5 @@
-# Static security analysis of the kit's own code.
-#
-# This repo distributes executable files — bin/kit.mjs, utility/set-version.mjs,
-# utility/sync-labels.sh, install-kit.sh — into twelve other repos. Those repos
-# run CodeQL; this one did not. So a high-severity ReDoS in set-version.mjs was
-# found by a consumer's scan, in a sync PR, after the file had already been
-# fanned out. The source of a fix has to be scanned at least as well as its
-# destinations.
-#
-# `regexp/no-super-linear-backtracking` in eslint.config.mjs catches that
-# particular class at commit time, which is faster and cheaper. This is the
-# backstop for everything eslint does not model.
+# Static security analysis. This package is an authorization server, so it is
+# scanned on every push and pull request, not only on a schedule.
 
 name: CodeQL
 

@@ -51,16 +51,11 @@ export default tseslint.config(
       ]
     }
   },
-  // The kit's own shipped code. `eslint src/` covered a two-file demo while
-  // bin/ and utility/ — the files install-kit.sh copies into twelve repos — were
-  // linted by nothing. A ReDoS in utility/set-version.mjs reached consumers and
-  // was found by a consumer's CodeQL, not here.
-  //
-  // Plain JS, so the type-checked TypeScript rules do not apply; what matters is
+  // Kit utility scripts. Plain JS, so the type-checked TypeScript rules do not apply; what matters is
   // regexp/no-super-linear-backtracking, which catches the class of defect that
   // got through.
   {
-    files: ['bin/**/*.mjs', 'utility/**/*.mjs'],
+    files: ['utility/**/*.mjs'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: { globals: globals.node },
     plugins: { regexp },

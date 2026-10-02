@@ -53,3 +53,8 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/worktrees/
+.kit-sync/
+.kit-check/
+.continue/
+.agents/
