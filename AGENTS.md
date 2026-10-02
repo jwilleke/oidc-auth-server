@@ -122,7 +122,8 @@ See YAML frontmatter above for current project state.
 
 - Embed node-oidc-provider rather than write a protocol implementation. It is MIT, OpenID Certified, and already supports device flow, UserInfo, refresh rotation, registration and client ID metadata documents.
 - The host owns sign-in. This package never stores passwords or factors; it receives the person, `amr` and `acr` from the host.
-- The hardening list from activescott/auth PR #83 is this package's test checklist.
+- The hardening list from [activescott/auth#83](https://github.com/activescott/auth/issues/83) (an issue, not a PR) is this package's test checklist.
+- Follow ngdpbase's [guiding framework](https://github.com/jwilleke/ngdpbase/blob/master/docs/guiding-framework.md) and its configuration conventions (operator, 2026-10-02). This package is a provider behind the host's manager: it reports, the host records and acts. Audit events are named `{target}-{action}`; a capability not configured is not loaded; a required setting that is missing or unsafe refuses the boot.
 
 ## Architecture & Tech Stack
 
