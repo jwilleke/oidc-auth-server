@@ -79,5 +79,9 @@
   },
   "dependencies": {
     "oidc-provider": "^9.12.2"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents": false
   }
 }
