@@ -23,6 +23,40 @@ Status: early. Nothing is published yet.
 - __Storage__ — an adapter for grants, sessions and clients.
 - __Audit__ — a callback for each event, so the host writes it to its own audit log.
 
+## Usage
+
+What works today: authorization code flow with PKCE, the host sign-in seam, hashed token storage, and UserInfo. Device flow, refresh rotation, client ID metadata documents and the audit hook are tracked under [#13](https://github.com/jwilleke/oidc-auth-server/issues/13).
+
+```ts
+import { createServer } from 'node:http';
+import { createAuthServer } from '@jwilleke/oidc-auth-server';
+
+const auth = createAuthServer({
+  issuer: 'https://auth.example.com',
+  jwks: { keys: [privateSigningJwk] },
+  cookieKeys: [process.env.OIDC_COOKIE_KEY!],
+  adapter: hostAdapterFactory, // node-oidc-provider Adapter; token ids arrive hashed
+  clients: [{ client_id: 'app', token_endpoint_auth_method: 'none', redirect_uris: ['…'] }],
+  acrValues: ['aal1', 'aal2'],
+  interactionUrl: (uid) => `/interaction/${uid}`,
+  findAccount: async (accountId) => users.claimsFor(accountId) // undefined fails closed
+});
+
+createServer(async (req, res) => {
+  if (!req.url?.startsWith('/interaction/')) return auth.handler(req, res);
+
+  const pending = await auth.interactions.details(req, res);
+  if (pending.prompt === 'login') {
+    // The host's own sign-in runs here, then reports what it established:
+    await auth.interactions.finishLogin(req, res, { accountId: 'alice', amr: ['pwd', 'otp'], acr: 'aal2' });
+  } else {
+    await auth.interactions.finishConsent(req, res);
+  }
+}).listen(9000);
+```
+
+`createAuthServer` throws before anything listens if the options are unsafe: a non-HTTPS issuer, missing private keys, short cookie keys, or no storage adapter outside `development: true`.
+
 ## Samples
 
 Planned under `examples/`:
