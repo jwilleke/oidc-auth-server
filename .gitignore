@@ -58,3 +58,4 @@ Thumbs.db
 .kit-check/
 .continue/
 .agents/
+config/app-custom-config.json

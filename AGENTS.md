@@ -322,6 +322,8 @@ npm run typecheck        # TypeScript type checking without emit
 
 ## Notes & Context
 
+- __Deployment:__ the operator's instance is served at `https://oidc.nerdsbythehour.com` (operator, 2026-10-02). Set as `oidc-auth-server.issuer` in the gitignored `config/app-custom-config.json`; the shipped defaults stay host-neutral.
+
 Add any additional notes, context, or information that agents should know here. Examples:
 
 - Known blockers preventing progress (also update YAML frontmatter)
