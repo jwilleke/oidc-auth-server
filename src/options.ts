@@ -1,6 +1,20 @@
 import type { AdapterFactory, ClientMetadata, JWKS } from 'oidc-provider';
 
-/** What the host passes to `createAuthServer`. */
+/** Lifetimes in seconds. Defaults: `oidc-auth-server.ttl.*` in config/app-default-config.json. */
+export interface Ttl {
+  accessToken: number;
+  authorizationCode: number;
+  idToken: number;
+  interaction: number;
+  session: number;
+  grant: number;
+  refreshToken: number;
+}
+
+/**
+ * What the host passes to `createAuthServer`. Unset optional settings take the shipped defaults
+ * from config/app-default-config.json; `loadConfig` + `optionsFromConfig` build this from files.
+ */
 export interface AuthServerOptions {
   /** The issuer identifier. HTTPS, no query or fragment. Include the mount path if any. */
   issuer: string;
@@ -21,8 +35,10 @@ export interface AuthServerOptions {
    * granted scopes name are released.
    */
   findAccount: (accountId: string) => Promise<Record<string, unknown> | undefined>;
-  /** Claims released per scope, beyond `openid`. Defaults to the OIDC standard profile and email. */
+  /** Claims released per scope, beyond `openid`. Defaults to OIDC Core 5.4 profile and email. */
   scopeClaims?: Record<string, string[]>;
+  /** Token, session and interaction lifetimes; unset entries take the shipped defaults. */
+  ttl?: Partial<Ttl>;
   /** The `acr` values the host's sign-in can produce, advertised in discovery. */
   acrValues?: string[];
   /** Host storage. Required outside development; see `createMemoryAdapter` for tests. */

@@ -57,6 +57,21 @@ createServer(async (req, res) => {
 
 `createAuthServer` throws before anything listens if the options are unsafe: a non-HTTPS issuer, missing private keys, short cookie keys, or no storage adapter outside `development: true`.
 
+## Configuration
+
+Settings follow ngdpbase's convention, under the package's own `oidc-auth-server.*` keys. [config/app-default-config.json](config/app-default-config.json) ships every default and documents each key. The host overrides them in its `app-custom-config.json`; maps merge per entry, anything else is replaced. An unknown key refuses the boot rather than being ignored.
+
+Secrets come only from the environment — `OIDC_AUTH_SERVER_JWKS` and `OIDC_AUTH_SERVER_COOKIE_KEYS` (see [.env.example](.env.example)). Writing either into a config file refuses the boot.
+
+```ts
+import { createAuthServer, loadConfig, optionsFromConfig } from '@jwilleke/oidc-auth-server';
+
+const config = loadConfig({ customConfigPath: 'config/app-custom-config.json' });
+const auth = createAuthServer(optionsFromConfig(config, { interactionUrl, findAccount, adapter }));
+```
+
+Options passed directly to `createAuthServer` take the shipped defaults for anything left unset.
+
 ## Samples
 
 Planned under `examples/`:

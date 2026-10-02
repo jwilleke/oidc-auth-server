@@ -104,7 +104,13 @@ describe('host sign-in seam', () => {
 
     const response = await exchange(code!, verifier);
     expect(response.status).toBe(200);
-    const tokens = (await response.json()) as { id_token: string; access_token: string };
+    const tokens = (await response.json()) as {
+      id_token: string;
+      access_token: string;
+      expires_in: number;
+    };
+    // The shipped oidc-auth-server.ttl.access-token applies when the host sets none.
+    expect(tokens.expires_in).toBe(3600);
     const idToken = decodeJwt(tokens.id_token);
     expect(idToken.sub).toBe('alice');
     expect(idToken.amr).toEqual(['pwd', 'otp']);

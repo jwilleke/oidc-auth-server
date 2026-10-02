@@ -1,0 +1,54 @@
+{
+  "_comment_file": "Shipped defaults for oidc-auth-server (#15). Lowest layer of three: this file, then the host's app-custom-config.json, then the environment for keys listed in oidc-auth-server.config.env-keys. Maps merge per entry; every other value is replaced whole. Settings only: secrets never live in a config file, and callbacks (findAccount, interactionUrl, adapter) are code options passed to createAuthServer.",
+
+  "_comment_issuer": "The issuer identifier: https, no query or fragment, including the mount path if any. The host sets it in app-custom-config.json; the empty value here refuses the boot until it is set.",
+  "oidc-auth-server.issuer": "",
+
+  "_comment_development": "Allows an http issuer and the in-memory adapter. Never true in production.",
+  "oidc-auth-server.development": false,
+
+  "_comment_acr_values": "The acr values the host's sign-in can produce, advertised in discovery. Empty means the host reports none.",
+  "oidc-auth-server.acr-values": [],
+
+  "_comment_scope_claims": "Claims released per scope, beyond openid (which always carries sub, acr, amr and auth_time). Defaults are OIDC Core 5.4 profile and email. A map: a host adds a scope without restating these.",
+  "oidc-auth-server.scope-claims": {
+    "profile": [
+      "name",
+      "family_name",
+      "given_name",
+      "middle_name",
+      "nickname",
+      "preferred_username",
+      "profile",
+      "picture",
+      "website",
+      "gender",
+      "birthdate",
+      "zoneinfo",
+      "locale",
+      "updated_at"
+    ],
+    "email": ["email", "email_verified"]
+  },
+
+  "_comment_clients": "Statically registered clients, as node-oidc-provider client metadata.",
+  "oidc-auth-server.clients": [],
+
+  "_comment_ttl": "Lifetimes in seconds. Session matches ngdpbase's 24-hour session max-age. Grant and refresh token bound how long a client keeps access without the person signing in again.",
+  "oidc-auth-server.ttl.access-token": 3600,
+  "oidc-auth-server.ttl.authorization-code": 60,
+  "oidc-auth-server.ttl.id-token": 3600,
+  "oidc-auth-server.ttl.interaction": 600,
+  "oidc-auth-server.ttl.session": 86400,
+  "oidc-auth-server.ttl.grant": 1209600,
+  "oidc-auth-server.ttl.refresh-token": 1209600,
+
+  "_comment_secret_keys": "Keys never displayed by a host's configuration screen. Both are environment-only.",
+  "oidc-auth-server.config.secret-keys": ["oidc-auth-server.jwks", "oidc-auth-server.cookie-keys"],
+
+  "_comment_env_keys": "Keys owned by the environment, and the variable that supplies each. A key listed here is read only from its variable: setting it in a config file refuses the boot, so a secret cannot end up in one. jwks is a JSON Web Key Set as JSON; cookie-keys is comma-separated.",
+  "oidc-auth-server.config.env-keys": {
+    "oidc-auth-server.jwks": "OIDC_AUTH_SERVER_JWKS",
+    "oidc-auth-server.cookie-keys": "OIDC_AUTH_SERVER_COOKIE_KEYS"
+  }
+}
