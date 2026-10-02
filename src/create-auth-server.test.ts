@@ -44,6 +44,11 @@ describe('assertSafeOptions', () => {
     expect(() => assertSafeOptions(baseOptions({ cookieKeys: ['short'] }))).toThrow(/32/);
   });
 
+  it('refuses to start without the host callbacks', () => {
+    const { interactionUrl: _i, findAccount: _f, ...rest } = baseOptions();
+    expect(() => assertSafeOptions(rest as never)).toThrow(/interactionUrl[\s\S]*findAccount/);
+  });
+
   it('refuses to run without a host adapter outside development', () => {
     expect(() => assertSafeOptions(baseOptions({ development: false }))).toThrow(/adapter/);
   });

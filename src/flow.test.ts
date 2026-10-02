@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createAuthServer, type AuthServer } from './create-auth-server.js';
-import { baseOptions, Browser, decodeJwt, listen, pkcePair } from './test-support.js';
+import { ACCOUNTS, baseOptions, Browser, decodeJwt, listen, pkcePair } from './test-support.js';
 
 const REDIRECT_URI = 'http://127.0.0.1/cb';
 
@@ -158,5 +158,60 @@ describe('host sign-in seam', () => {
       authorizePath({ code_challenge: pkcePair().challenge, code_challenge_method: 'S256' })
     );
     expect(url).toContain('/interaction/');
+  });
+});
+
+async function signedInTokens(scope: string): Promise<{ access_token: string }> {
+  host = signInAlice;
+  const { redirect, verifier } = await authorize(new Browser(server.baseUrl), { scope });
+  const response = await exchange(redirect.searchParams.get('code')!, verifier);
+  return (await response.json()) as { access_token: string };
+}
+
+async function userinfo(accessToken: string): Promise<Response> {
+  return fetch(`${server.baseUrl}/me`, { headers: { authorization: `Bearer ${accessToken}` } });
+}
+
+describe('UserInfo', () => {
+  it('returns only the claims the granted scopes name', async () => {
+    const { access_token } = await signedInTokens('openid email');
+    const response = await userinfo(access_token);
+    expect(response.status).toBe(200);
+    const claims = (await response.json()) as Record<string, unknown>;
+    expect(claims).toMatchObject({
+      sub: 'alice',
+      email: 'alice@example.com',
+      email_verified: true
+    });
+    expect(claims.name).toBeUndefined();
+  });
+
+  it('releases profile claims for the profile scope', async () => {
+    const { access_token } = await signedInTokens('openid profile');
+    const claims = (await (await userinfo(access_token)).json()) as Record<string, unknown>;
+    expect(claims.name).toBe('Alice Example');
+    expect(claims.email).toBeUndefined();
+  });
+
+  it('refuses a revoked access token', async () => {
+    const { access_token } = await signedInTokens('openid');
+    const revoke = await fetch(`${server.baseUrl}/token/revocation`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: 'app', token: access_token })
+    });
+    expect(revoke.status).toBe(200);
+    expect((await userinfo(access_token)).status).toBe(401);
+  });
+
+  it('fails closed when the host no longer finds the account', async () => {
+    const { access_token } = await signedInTokens('openid email');
+    const saved = ACCOUNTS.alice;
+    delete ACCOUNTS.alice;
+    try {
+      expect((await userinfo(access_token)).status).toBe(401);
+    } finally {
+      ACCOUNTS.alice = saved;
+    }
   });
 });

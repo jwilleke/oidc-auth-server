@@ -5,6 +5,11 @@ import type { AddressInfo } from 'node:net';
 import type { JWKS } from 'oidc-provider';
 import type { AuthServerOptions } from './options.js';
 
+/** The stub host's accounts. */
+export const ACCOUNTS: Record<string, Record<string, unknown>> = {
+  alice: { name: 'Alice Example', email: 'alice@example.com', email_verified: true }
+};
+
 let cachedJwks: JWKS | undefined;
 
 /** One RSA signing key per test run; generating it is the slow part. */
@@ -23,6 +28,7 @@ export function baseOptions(overrides: Partial<AuthServerOptions> = {}): AuthSer
     cookieKeys: ['a-cookie-signing-key-of-32-chars!'],
     development: true,
     interactionUrl: (uid) => `/interaction/${uid}`,
+    findAccount: (accountId) => Promise.resolve(ACCOUNTS[accountId]),
     ...overrides
   };
 }

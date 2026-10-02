@@ -15,6 +15,14 @@ export interface AuthServerOptions {
    * `interactions.finishLogin` / `finishConsent` / `fail` to continue.
    */
   interactionUrl: (uid: string) => string;
+  /**
+   * The host's account lookup. Returns the person's claims (without `sub`), or undefined when the
+   * account no longer exists or is disabled — which fails the request closed. Only the claims the
+   * granted scopes name are released.
+   */
+  findAccount: (accountId: string) => Promise<Record<string, unknown> | undefined>;
+  /** Claims released per scope, beyond `openid`. Defaults to the OIDC standard profile and email. */
+  scopeClaims?: Record<string, string[]>;
   /** The `acr` values the host's sign-in can produce, advertised in discovery. */
   acrValues?: string[];
   /** Host storage. Required outside development; see `createMemoryAdapter` for tests. */
@@ -67,6 +75,10 @@ export function assertSafeOptions(options: AuthServerOptions): void {
 
   if (typeof options.interactionUrl !== 'function') {
     problems.push('interactionUrl must be a function');
+  }
+
+  if (typeof options.findAccount !== 'function') {
+    problems.push('findAccount must be a function');
   }
 
   if (!options.adapter && !development) {
