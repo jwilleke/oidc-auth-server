@@ -1,4 +1,5 @@
 import type { AdapterFactory, ClientMetadata, JWKS } from 'oidc-provider';
+import { AUDIT_EVENT_NAMES, type AuditEventDefinition, type AuditSink } from './audit.js';
 
 /** Lifetimes in seconds. Defaults: `oidc-auth-server.ttl.*` in config/app-default-config.json. */
 export interface Ttl {
@@ -56,6 +57,13 @@ export interface AuthServerOptions {
   ttl?: Partial<Ttl>;
   /** APIs that accept access tokens; a token for one names it as audience. Unknown ones are refused. */
   resourceServers?: Record<string, ResourceServer>;
+  /**
+   * The host's audit manager. Receives every enabled registry event; never a token or secret.
+   * Unset means nothing is reported — the inert default.
+   */
+  audit?: AuditSink;
+  /** The audit event registry; defaults to `oidc-auth-server.audit.events`. null removes one. */
+  auditEvents?: Record<string, AuditEventDefinition | null>;
   /** Client ID Metadata Documents. Off unless enabled. */
   clientIdMetadataDocument?: ClientIdMetadataDocumentOptions;
   /** The `acr` values the host's sign-in can produce, advertised in discovery. */
@@ -129,6 +137,16 @@ export function assertSafeOptions(options: AuthServerOptions): void {
     }
     if (server.accessTokenFormat && !['opaque', 'jwt'].includes(server.accessTokenFormat)) {
       problems.push(`resource server ${indicator} access-token-format must be opaque or jwt`);
+    }
+  }
+
+  for (const [name, definition] of Object.entries(options.auditEvents ?? {})) {
+    if (!(AUDIT_EVENT_NAMES as readonly string[]).includes(name)) {
+      problems.push(`audit event ${name} is declared but nothing reports it`);
+    } else if (definition && (definition.onFailure as string) !== 'continue') {
+      problems.push(
+        `audit event ${name}: on-failure ${String(definition.onFailure)} cannot be honoured; events fire after the action, so only continue is possible`
+      );
     }
   }
 

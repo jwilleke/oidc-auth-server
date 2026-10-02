@@ -25,7 +25,7 @@ Status: early. Nothing is published yet.
 
 ## Usage
 
-What works today: authorization code flow with PKCE, the host sign-in seam, hashed token storage, and UserInfo. Device flow, refresh rotation, client ID metadata documents and the audit hook are tracked under [#13](https://github.com/jwilleke/oidc-auth-server/issues/13).
+What works today: authorization code flow with PKCE, the host sign-in seam, hashed token storage, UserInfo, refresh token rotation with reuse detection, audience-bound tokens for registered APIs, client ID metadata documents (off by default) and the audit hook. Device flow and the hardening checklist tests are tracked under [#13](https://github.com/jwilleke/oidc-auth-server/issues/13).
 
 ```ts
 import { createServer } from 'node:http';
@@ -39,7 +39,8 @@ const auth = createAuthServer({
   clients: [{ client_id: 'app', token_endpoint_auth_method: 'none', redirect_uris: ['…'] }],
   acrValues: ['aal1', 'aal2'],
   interactionUrl: (uid) => `/interaction/${uid}`,
-  findAccount: async (accountId) => users.claimsFor(accountId) // undefined fails closed
+  findAccount: async (accountId) => users.claimsFor(accountId), // undefined fails closed
+  audit: (event) => auditManager.record(event) // events named in oidc-auth-server.audit.events
 });
 
 createServer(async (req, res) => {

@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { AuditEvent } from './audit.js';
 import { createAuthServer, type AuthServer } from './create-auth-server.js';
 import { ACCOUNTS, baseOptions, Browser, decodeJwt, listen, pkcePair } from './test-support.js';
 
@@ -23,6 +24,7 @@ const signInAlice: HostRoute = async (auth, req, res) => {
 };
 
 let auth: AuthServer;
+const audited: AuditEvent[] = [];
 let host: HostRoute = signInAlice;
 let server: Awaited<ReturnType<typeof listen>>;
 const consentUrls: string[] = [];
@@ -37,6 +39,9 @@ beforeAll(async () => {
           [API]: { scope: 'api:read', accessTokenFormat: 'jwt' }
         },
         clientIdMetadataDocument: { enabled: true, allowedHosts: [] },
+        audit: (event) => {
+          audited.push(event);
+        },
         clients: [
           {
             client_id: 'app',
@@ -307,8 +312,10 @@ describe('authorization code reuse', () => {
     const first = (await (await exchange(code, verifier)).json()) as Tokens;
     expect(first.access_token).toBeTruthy();
 
+    audited.length = 0;
     const second = await exchange(code, verifier);
     expect(second.status).toBe(400);
+    expect(audited.map((e) => e.event)).toContain('token-reuse');
     expect(((await second.json()) as Tokens).error).toBe('invalid_grant');
     expect((await userinfo(first.access_token)).status).toBe(401);
   });
@@ -364,4 +371,62 @@ describe('client ID metadata documents', () => {
       expect(await response.text()).toMatch(/metadata document fetch not allowed/);
     }
   );
+});
+
+describe('audit', () => {
+  const names = (): string[] => audited.map((e) => e.event);
+
+  it('reports a sign-in and token issue, never a token value', async () => {
+    audited.length = 0;
+    host = signInAlice;
+    const { redirect, verifier } = await authorize(new Browser(server.baseUrl));
+    const code = redirect.searchParams.get('code')!;
+    const tokens = (await (await exchange(code, verifier)).json()) as Tokens & { id_token: string };
+
+    expect(names()).toEqual(expect.arrayContaining(['authorization-allow', 'token-issue']));
+    const issue = audited.find((e) => e.event === 'token-issue')!;
+    expect(issue).toMatchObject({ clientId: 'app', grantType: 'authorization_code' });
+    expect(issue.at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+    const serialized = JSON.stringify(audited);
+    for (const secret of [code, verifier, tokens.access_token, tokens.id_token]) {
+      expect(serialized).not.toContain(secret);
+    }
+  });
+
+  it('reports a refused sign-in', async () => {
+    audited.length = 0;
+    host = (a, req, res) => a.interactions.fail(req, res, 'access_denied', 'wrong password');
+    await authorize(new Browser(server.baseUrl));
+    expect(audited.find((e) => e.event === 'authorization-deny')).toMatchObject({
+      error: 'access_denied',
+      errorDescription: 'wrong password'
+    });
+  });
+
+  it('reports refresh token reuse as token-reuse and the grant revocation', async () => {
+    const first = await offlineTokens();
+    await refresh(first.refresh_token!);
+    audited.length = 0;
+    await refresh(first.refresh_token!);
+    expect(names()).toEqual(expect.arrayContaining(['token-reuse', 'grant-revoke']));
+    expect(names()).not.toContain('token-error');
+  });
+
+  it('reports a revoked token without its value', async () => {
+    const { access_token } = await signedInTokens('openid');
+    audited.length = 0;
+    await tokenRequest({ token: access_token }).catch(() => undefined);
+    await fetch(`${server.baseUrl}/token/revocation`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: 'app', token: access_token })
+    });
+    expect(audited.find((e) => e.event === 'token-revoke')).toMatchObject({
+      tokenKind: 'AccessToken',
+      clientId: 'app',
+      accountId: 'alice'
+    });
+    expect(JSON.stringify(audited)).not.toContain(access_token);
+  });
 });

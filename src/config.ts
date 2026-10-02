@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { ClientMetadata, JWKS } from 'oidc-provider';
+import type { AuditEventDefinition } from './audit.js';
 import type { AuthServerOptions, ResourceServer, Ttl } from './options.js';
 
 /** A flat configuration: `oidc-auth-server.*` keys to values, comments removed. */
@@ -119,11 +120,30 @@ export function optionsFromConfig(config: Config, callbacks: HostCallbacks): Aut
     scopeClaims: get<Record<string, string[]>>('scope-claims'),
     ttl: ttlFromConfig(config),
     resourceServers: resourceServersFromConfig(get('resource-servers')),
+    auditEvents: auditEventsFromConfig(get('audit.events')),
     clientIdMetadataDocument: {
       enabled: get<boolean>('client-id-metadata-document.enabled'),
       allowedHosts: get<string[]>('client-id-metadata-document.allowed-hosts')
     }
   };
+}
+
+/** `oidc-auth-server.audit.events` by option name; null stays null (the entry is removed). */
+export function auditEventsFromConfig(raw: unknown): Record<string, AuditEventDefinition | null> {
+  const events: Record<string, AuditEventDefinition | null> = {};
+  for (const [name, entry] of Object.entries((raw ?? {}) as Record<string, unknown>)) {
+    if (entry === null) {
+      events[name] = null;
+      continue;
+    }
+    const settings = entry as Record<string, unknown>;
+    events[name] = {
+      onFailure: settings['on-failure'] as AuditEventDefinition['onFailure'],
+      description: settings.description as string,
+      enabled: settings.enabled as boolean | undefined
+    };
+  }
+  return events;
 }
 
 function resourceServersFromConfig(raw: unknown): Record<string, ResourceServer> {

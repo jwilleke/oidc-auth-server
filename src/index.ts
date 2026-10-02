@@ -10,3 +10,10 @@ export {
   type LoadConfigOptions
 } from './config.js';
 export type { InteractionHelpers, PendingInteraction, SignInResult } from './interactions.js';
+export {
+  AUDIT_EVENT_NAMES,
+  type AuditEvent,
+  type AuditEventDefinition,
+  type AuditEventName,
+  type AuditSink
+} from './audit.js';

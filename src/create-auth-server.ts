@@ -5,7 +5,8 @@ import Provider, {
   type Configuration,
   type KoaContextWithOIDC
 } from 'oidc-provider';
-import { defaultConfig, ttlFromConfig } from './config.js';
+import { attachAudit } from './audit.js';
+import { auditEventsFromConfig, defaultConfig, ttlFromConfig } from './config.js';
 import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
 import { createMemoryAdapter } from './memory-adapter.js';
@@ -19,6 +20,8 @@ export interface AuthServer {
   handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
   /** Called from the host's interaction route to finish or fail sign-in and consent. */
   interactions: InteractionHelpers;
+  /** Audit reports the host's callback failed to take. Zero when no callback is set. */
+  auditFailures: () => number;
 }
 
 /**
@@ -124,5 +127,14 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   };
 
   const provider = new Provider(options.issuer, configuration);
-  return { provider, handler: provider.callback(), interactions: interactionHelpers(provider) };
+  const registry =
+    options.auditEvents ?? auditEventsFromConfig(defaults['oidc-auth-server.audit.events']);
+  let audit = { failures: (): number => 0 };
+  if (options.audit) audit = attachAudit(provider, options.audit, registry);
+  return {
+    provider,
+    handler: provider.callback(),
+    interactions: interactionHelpers(provider),
+    auditFailures: audit.failures
+  };
 }

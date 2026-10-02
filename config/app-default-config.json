@@ -50,6 +50,46 @@
   "oidc-auth-server.ttl.grant": 1209600,
   "oidc-auth-server.ttl.refresh-token": 1209600,
 
+  "_comment_audit_events": "The audit event registry, keyed by event, in ngdpbase's shape. Names are {target}-{action}. The package reports each event to the host's audit callback; the host's audit manager records it. enabled: whether the event is reported; omitted means true; false is a decision on the record. null removes an entry. on-failure: what happens when the host's callback fails. Only continue is possible here: node-oidc-provider reports an event after the action has happened, so it cannot be refused — a refuse entry stops the boot rather than claim a guarantee nobody keeps. A failed report is counted (auditFailures). Events never carry a token, code or secret. A test holds this map and the code's list equal.",
+  "oidc-auth-server.audit.events": {
+    "authorization-allow": {
+      "on-failure": "continue",
+      "description": "An authorization request succeeded and a code was issued to the client"
+    },
+    "authorization-deny": {
+      "on-failure": "continue",
+      "description": "An authorization request was refused: denied sign-in, unknown resource, bad request"
+    },
+    "token-issue": {
+      "on-failure": "continue",
+      "description": "The token endpoint issued tokens, with the grant type that earned them"
+    },
+    "token-error": {
+      "on-failure": "continue",
+      "description": "The token endpoint refused a request"
+    },
+    "token-reuse": {
+      "on-failure": "continue",
+      "description": "A used authorization code or refresh token was presented again; its grant was revoked"
+    },
+    "token-revoke": {
+      "on-failure": "continue",
+      "description": "An access or refresh token was destroyed, by revocation or with its grant"
+    },
+    "grant-revoke": {
+      "on-failure": "continue",
+      "description": "A grant and every token issued under it were revoked"
+    },
+    "userinfo-error": {
+      "on-failure": "continue",
+      "description": "UserInfo refused a request: invalid, expired or revoked token, unknown account"
+    },
+    "server-error": {
+      "on-failure": "continue",
+      "description": "The server failed while handling a request"
+    }
+  },
+
   "_comment_secret_keys": "Keys never displayed by a host's configuration screen. Both are environment-only.",
   "oidc-auth-server.config.secret-keys": ["oidc-auth-server.jwks", "oidc-auth-server.cookie-keys"],
 
