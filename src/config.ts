@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import type { ClientMetadata, JWKS } from 'oidc-provider';
-import type { AuthServerOptions, Ttl } from './options.js';
+import type { AuthServerOptions, ResourceServer, Ttl } from './options.js';
 
 /** A flat configuration: `oidc-auth-server.*` keys to values, comments removed. */
 export type Config = Record<string, unknown>;
@@ -117,8 +117,28 @@ export function optionsFromConfig(config: Config, callbacks: HostCallbacks): Aut
     clients: get<ClientMetadata[]>('clients'),
     acrValues: get<string[]>('acr-values'),
     scopeClaims: get<Record<string, string[]>>('scope-claims'),
-    ttl: ttlFromConfig(config)
+    ttl: ttlFromConfig(config),
+    resourceServers: resourceServersFromConfig(get('resource-servers')),
+    clientIdMetadataDocument: {
+      enabled: get<boolean>('client-id-metadata-document.enabled'),
+      allowedHosts: get<string[]>('client-id-metadata-document.allowed-hosts')
+    }
   };
+}
+
+function resourceServersFromConfig(raw: unknown): Record<string, ResourceServer> {
+  const servers: Record<string, ResourceServer> = {};
+  for (const [indicator, entry] of Object.entries((raw ?? {}) as Record<string, unknown>)) {
+    // null removes an entry, as in ngdpbase: a host can drop a shipped or inherited server.
+    if (entry === null) continue;
+    const settings = entry as Record<string, unknown>;
+    servers[indicator] = {
+      scope: settings.scope as string,
+      accessTokenFormat: settings['access-token-format'] as ResourceServer['accessTokenFormat'],
+      accessTokenTtl: settings['access-token-ttl'] as number | undefined
+    };
+  }
+  return servers;
 }
 
 function splitList(value: string): string[] {

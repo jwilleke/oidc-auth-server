@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Provider, {
+  errors,
   type ClientMetadata,
   type Configuration,
   type KoaContextWithOIDC
@@ -8,6 +9,7 @@ import { defaultConfig, ttlFromConfig } from './config.js';
 import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
 import { createMemoryAdapter } from './memory-adapter.js';
+import { allowMetadataFetch, guardedFetch } from './outgoing-fetch.js';
 import { assertSafeOptions, type AuthServerOptions } from './options.js';
 
 export interface AuthServer {
@@ -42,6 +44,12 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   assertSafeOptions(options);
   const defaults = defaultConfig();
   const ttl = { ...ttlFromConfig(defaults), ...options.ttl };
+
+  const resourceServers = options.resourceServers ?? {};
+  const metadataDocuments = options.clientIdMetadataDocument ?? {
+    enabled: defaults['oidc-auth-server.client-id-metadata-document.enabled'] as boolean,
+    allowedHosts: defaults['oidc-auth-server.client-id-metadata-document.allowed-hosts'] as string[]
+  };
 
   const configuration: Configuration = {
     adapter: hashingAdapter(options.adapter ?? createMemoryAdapter()),
@@ -87,8 +95,30 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
       RefreshToken: ttl.refreshToken
     },
     pkce: { required: () => true },
+    fetch: guardedFetch(),
     features: {
       devInteractions: { enabled: false },
+      clientIdMetadataDocument: {
+        enabled: metadataDocuments.enabled,
+        ack: 'draft-02',
+        allowFetch: (_ctx, clientId) => allowMetadataFetch(clientId, metadataDocuments.allowedHosts)
+      },
+      // A token for an API names it as audience (RFC 8707); an unlisted resource is refused.
+      resourceIndicators: {
+        enabled: true,
+        defaultResource: (_ctx, _client, oneOf) => oneOf,
+        useGrantedResource: () => true,
+        getResourceServerInfo: (_ctx, indicator) => {
+          const server = resourceServers[indicator];
+          if (!server) throw new errors.InvalidTarget();
+          return {
+            scope: server.scope,
+            audience: indicator,
+            accessTokenFormat: server.accessTokenFormat ?? 'opaque',
+            accessTokenTTL: server.accessTokenTtl ?? ttl.accessToken
+          };
+        }
+      },
       revocation: { enabled: true }
     }
   };

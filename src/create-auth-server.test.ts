@@ -53,6 +53,17 @@ describe('assertSafeOptions', () => {
     expect(() => assertSafeOptions(baseOptions({ development: false }))).toThrow(/adapter/);
   });
 
+  it('refuses a resource server without scopes or with a fragment', () => {
+    expect(() =>
+      assertSafeOptions(
+        baseOptions({ resourceServers: { 'https://api.example.com#x': { scope: '' } } })
+      )
+    ).toThrow(/fragment[\s\S]*declare the scopes/);
+    expect(() =>
+      assertSafeOptions(baseOptions({ resourceServers: { 'not a url': { scope: 'a' } } }))
+    ).toThrow(/absolute URL/);
+  });
+
   it('names every problem in one error', () => {
     expect(() =>
       assertSafeOptions(baseOptions({ issuer: 'nope', cookieKeys: [], jwks: { keys: [] } }))

@@ -11,6 +11,21 @@ export interface Ttl {
   refreshToken: number;
 }
 
+/** An API that accepts this server's access tokens. Keyed by resource indicator. */
+export interface ResourceServer {
+  /** Scopes the API accepts, space-separated. */
+  scope: string;
+  accessTokenFormat?: 'opaque' | 'jwt';
+  /** Seconds; defaults to `ttl.accessToken`. */
+  accessTokenTtl?: number;
+}
+
+export interface ClientIdMetadataDocumentOptions {
+  enabled: boolean;
+  /** Hosts whose metadata documents may be fetched. Empty means any public host. */
+  allowedHosts?: string[];
+}
+
 /**
  * What the host passes to `createAuthServer`. Unset optional settings take the shipped defaults
  * from config/app-default-config.json; `loadConfig` + `optionsFromConfig` build this from files.
@@ -39,6 +54,10 @@ export interface AuthServerOptions {
   scopeClaims?: Record<string, string[]>;
   /** Token, session and interaction lifetimes; unset entries take the shipped defaults. */
   ttl?: Partial<Ttl>;
+  /** APIs that accept access tokens; a token for one names it as audience. Unknown ones are refused. */
+  resourceServers?: Record<string, ResourceServer>;
+  /** Client ID Metadata Documents. Off unless enabled. */
+  clientIdMetadataDocument?: ClientIdMetadataDocumentOptions;
   /** The `acr` values the host's sign-in can produce, advertised in discovery. */
   acrValues?: string[];
   /** Host storage. Required outside development; see `createMemoryAdapter` for tests. */
@@ -95,6 +114,22 @@ export function assertSafeOptions(options: AuthServerOptions): void {
 
   if (typeof options.findAccount !== 'function') {
     problems.push('findAccount must be a function');
+  }
+
+  for (const [indicator, server] of Object.entries(options.resourceServers ?? {})) {
+    let url: URL | undefined;
+    try {
+      url = new URL(indicator);
+    } catch {
+      problems.push(`resource server ${indicator} must be an absolute URL`);
+    }
+    if (url?.hash) problems.push(`resource server ${indicator} must not carry a fragment`);
+    if (typeof server.scope !== 'string' || server.scope.trim() === '') {
+      problems.push(`resource server ${indicator} must declare the scopes it accepts`);
+    }
+    if (server.accessTokenFormat && !['opaque', 'jwt'].includes(server.accessTokenFormat)) {
+      problems.push(`resource server ${indicator} access-token-format must be opaque or jwt`);
+    }
   }
 
   if (!options.adapter && !development) {

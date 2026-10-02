@@ -4,6 +4,7 @@ import { createAuthServer, type AuthServer } from './create-auth-server.js';
 import { ACCOUNTS, baseOptions, Browser, decodeJwt, listen, pkcePair } from './test-support.js';
 
 const REDIRECT_URI = 'http://127.0.0.1/cb';
+const API = 'https://api.example.com';
 
 type HostRoute = (auth: AuthServer, req: IncomingMessage, res: ServerResponse) => Promise<void>;
 
@@ -32,6 +33,10 @@ beforeAll(async () => {
       baseOptions({
         issuer: baseUrl,
         acrValues: ['aal1', 'aal2'],
+        resourceServers: {
+          [API]: { scope: 'api:read', accessTokenFormat: 'jwt' }
+        },
+        clientIdMetadataDocument: { enabled: true, allowedHosts: [] },
         clients: [
           {
             client_id: 'app',
@@ -307,4 +312,56 @@ describe('authorization code reuse', () => {
     expect(((await second.json()) as Tokens).error).toBe('invalid_grant');
     expect((await userinfo(first.access_token)).status).toBe(401);
   });
+});
+
+describe('audience', () => {
+  it('names the resource server as the audience of its access token', async () => {
+    host = signInAlice;
+    const { redirect, verifier } = await authorize(new Browser(server.baseUrl), {
+      scope: 'openid api:read',
+      resource: API
+    });
+    const response = await tokenRequest({
+      grant_type: 'authorization_code',
+      code: redirect.searchParams.get('code')!,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: verifier,
+      resource: API
+    });
+    expect(response.status).toBe(200);
+    const tokens = (await response.json()) as Tokens & { scope: string };
+    const accessToken = decodeJwt(tokens.access_token);
+    expect(accessToken.aud).toBe(API);
+    expect(accessToken.scope).toBe('api:read');
+    expect(accessToken).toMatchObject({ acr: 'aal2', amr: ['pwd', 'otp'] });
+  });
+
+  it('refuses a resource that is not a registered resource server', async () => {
+    host = signInAlice;
+    const { redirect } = await authorize(new Browser(server.baseUrl), {
+      resource: 'https://other.example.com'
+    });
+    expect(redirect.searchParams.get('error')).toBe('invalid_target');
+    expect(redirect.searchParams.get('code')).toBeNull();
+  });
+});
+
+describe('client ID metadata documents', () => {
+  it.each(['https://127.0.0.1/client.json', 'https://169.254.169.254/latest/meta-data'])(
+    'refuses %s as a client without fetching it',
+    async (clientId) => {
+      const { challenge } = pkcePair();
+      const query = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: REDIRECT_URI,
+        response_type: 'code',
+        scope: 'openid',
+        code_challenge: challenge,
+        code_challenge_method: 'S256'
+      });
+      const response = await new Browser(server.baseUrl).request(`/auth?${query.toString()}`);
+      expect(response.status).toBe(400);
+      expect(await response.text()).toMatch(/metadata document fetch not allowed/);
+    }
+  );
 });

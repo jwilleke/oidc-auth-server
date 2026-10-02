@@ -34,6 +34,13 @@
   "_comment_clients": "Statically registered clients, as node-oidc-provider client metadata.",
   "oidc-auth-server.clients": [],
 
+  "_comment_client_id_metadata_document": "OAuth Client ID Metadata Documents (draft-02): a client, typically an MCP client, identifies itself with an https URL the server fetches. Off unless enabled. allowed-hosts limits which hosts may be fetched; empty means any public host. Fetches never reach private, loopback or link-local addresses, never follow redirects, and stop at 2.5 seconds and 5 KB; if that protection cannot be set up, no fetch happens at all.",
+  "oidc-auth-server.client-id-metadata-document.enabled": false,
+  "oidc-auth-server.client-id-metadata-document.allowed-hosts": [],
+
+  "_comment_resource_servers": "APIs that accept this server's access tokens, keyed by resource indicator (RFC 8707). A token for a resource names it as its audience, so one API cannot replay another's token. scope: the scopes that API accepts, space-separated. access-token-format: opaque or jwt. access-token-ttl: seconds, defaults to ttl.access-token. A request for a resource not listed here is refused. A token with no resource is good only at UserInfo. A map: a host adds an API without restating the others.",
+  "oidc-auth-server.resource-servers": {},
+
   "_comment_ttl": "Lifetimes in seconds. Session matches ngdpbase's 24-hour session max-age. Grant and refresh token bound how long a client keeps access without the person signing in again.",
   "oidc-auth-server.ttl.access-token": 3600,
   "oidc-auth-server.ttl.authorization-code": 60,

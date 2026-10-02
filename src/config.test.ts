@@ -87,6 +87,38 @@ describe('loadConfig', () => {
     expect(() => assertSafeOptions(options)).not.toThrow();
   });
 
+  it('maps resource servers and metadata-document settings, null removing an entry', () => {
+    const config = loadConfig({
+      customConfig: {
+        'oidc-auth-server.resource-servers': {
+          'https://api.example.com': { scope: 'api:read', 'access-token-format': 'jwt' },
+          'https://old.example.com': null
+        },
+        'oidc-auth-server.client-id-metadata-document.enabled': true,
+        'oidc-auth-server.client-id-metadata-document.allowed-hosts': ['mcp.example.com']
+      },
+      env
+    });
+    const options = optionsFromConfig(config, callbacks);
+    expect(options.resourceServers).toEqual({
+      'https://api.example.com': {
+        scope: 'api:read',
+        accessTokenFormat: 'jwt',
+        accessTokenTtl: undefined
+      }
+    });
+    expect(options.clientIdMetadataDocument).toEqual({
+      enabled: true,
+      allowedHosts: ['mcp.example.com']
+    });
+  });
+
+  it('ships metadata documents off', () => {
+    expect(optionsFromConfig(defaultConfig(), callbacks).clientIdMetadataDocument?.enabled).toBe(
+      false
+    );
+  });
+
   it('refuses a jwks variable that is not JSON', () => {
     const config = loadConfig({ env: { OIDC_AUTH_SERVER_JWKS: '{nope' } });
     expect(() => optionsFromConfig(config, callbacks)).toThrow(/jwks is not valid JSON/);
