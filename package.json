@@ -1,6 +1,6 @@
 {
   "name": "@jwilleke/oidc-auth-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenID Connect authorization server for Node apps: a thin, hardened wrapper around node-oidc-provider with device authorization (RFC 8628), UserInfo, refresh rotation and PKCE, where the host app keeps sign-in.",
   "type": "module",
   "main": "dist/index.js",
