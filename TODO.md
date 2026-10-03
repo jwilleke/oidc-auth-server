@@ -28,7 +28,7 @@ last_updated: "2026-10-02"
 
 ## 🔵 In review
 
-- [#13](https://github.com/jwilleke/oidc-auth-server/issues/13) — [EPIC] First release: embedded, hardened OIDC authorization server
+*None.*
 
 ## ⏸ Deferred
 
