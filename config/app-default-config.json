@@ -7,6 +7,9 @@
   "_comment_development": "Allows an http issuer and the in-memory adapter. Never true in production.",
   "oidc-auth-server.development": false,
 
+  "_comment_trust_proxy": "Behind a reverse proxy, ingress or load balancer that ends TLS, set true so X-Forwarded-Proto and X-Forwarded-For are believed: cookies then carry Secure, and the client IP (throttle, audit) is the person's, not the proxy's. Leave false when clients connect directly, or anyone can forge those headers. With an https issuer, a request that arrives over plain HTTP without a trusted forwarded protocol is refused (discovery and JWKS excepted, for health probes) rather than served with insecure cookies.",
+  "oidc-auth-server.trust-proxy": false,
+
   "_comment_acr_values": "The acr values the host's sign-in can produce, advertised in discovery. Empty means the host reports none.",
   "oidc-auth-server.acr-values": [],
 

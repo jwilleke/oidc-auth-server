@@ -43,6 +43,27 @@ function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | u
   return extra ? { acr: extra.acr, amr: extra.amr } : undefined;
 }
 
+/** Paths a health probe may fetch over plain HTTP: they set no cookie and carry no secret. */
+const PROBE_PATHS = /\/(\.well-known\/openid-configuration|jwks)$/;
+
+/**
+ * With an https issuer, refuse a request that is not secure as Koa sees it — direct TLS, or a
+ * trusted proxy's X-Forwarded-Proto. Otherwise cookies go out without Secure and the client IP
+ * is the proxy's. The usual cause is a TLS-terminating proxy without trust-proxy set.
+ */
+function refusePlainHttp(provider: Provider): void {
+  provider.use(async (ctx, next) => {
+    if (ctx.secure || (ctx.method === 'GET' && PROBE_PATHS.test(ctx.path))) {
+      await next();
+      return;
+    }
+    ctx.status = 400;
+    ctx.type = 'text';
+    ctx.body =
+      'This https issuer was reached over plain HTTP. Behind a TLS-terminating proxy, set oidc-auth-server.trust-proxy and forward X-Forwarded-Proto.';
+  });
+}
+
 /**
  * Build a hardened node-oidc-provider. Unsafe options throw before anything listens.
  *
@@ -163,6 +184,8 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   };
 
   const provider = new Provider(options.issuer, configuration);
+  provider.proxy = options.trustProxy ?? (defaults['oidc-auth-server.trust-proxy'] as boolean);
+  if (new URL(options.issuer).protocol === 'https:') refusePlainHttp(provider);
   if (deviceFlow.enabled) {
     applyUserCodeThrottle(provider, throttle);
     applyPollingInterval(provider, ttl.deviceCode);

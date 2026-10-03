@@ -75,6 +75,11 @@ export interface AuthServerOptions {
   /** Host storage. Required outside development; see `createMemoryAdapter` for tests. */
   adapter?: AdapterFactory;
   /**
+   * Believe X-Forwarded-Proto / X-Forwarded-For from a TLS-terminating proxy. Off by default:
+   * without a proxy in front, those headers are forgeable.
+   */
+  trustProxy?: boolean;
+  /**
    * Allows an `http:` issuer and the in-memory adapter. Never set this in production.
    * Defaults to false.
    */

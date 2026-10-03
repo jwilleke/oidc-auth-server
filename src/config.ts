@@ -116,6 +116,7 @@ export function optionsFromConfig(config: Config, callbacks: HostCallbacks): Aut
     ...callbacks,
     issuer: get<string>('issuer'),
     development: get<boolean>('development'),
+    trustProxy: get<boolean>('trust-proxy'),
     jwks,
     cookieKeys,
     clients: get<ClientMetadata[]>('clients'),
