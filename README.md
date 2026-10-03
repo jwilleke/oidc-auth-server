@@ -127,6 +127,16 @@ Agent and contributor rules are in [AGENTS.md](AGENTS.md).
 
 The design decisions behind this package were made for [ngdpbase](https://github.com/jwilleke/ngdpbase) and are recorded in its `docs/planning/authentication.md`.
 
+## Acknowledgements
+
+This package is built on, and shaped by, other people's work. No code was copied from any of the projects below; where their work is used, it is used as a dependency or as a published idea, credited here.
+
+- __[node-oidc-provider](https://github.com/panva/node-oidc-provider)__ by Filip Skokan ([@panva](https://github.com/panva)), MIT. The OpenID Certified protocol implementation this package wraps: authorization code flow, PKCE, refresh rotation and reuse detection, RFC 8628, UserInfo, resource indicators, client ID metadata documents, and the special-use-address SSRF guard on outgoing requests. A runtime dependency; every protocol behaviour this package hardens or tests is ultimately its work.
+- __[activescott/auth](https://github.com/activescott/auth)__ by Scott Willeke ([@activescott](https://github.com/activescott)), MIT. Its OAuth server proposal, [activescott/auth#83](https://github.com/activescott/auth/issues/83), carries the hardening list this package adopted as its review checklist and proves item by item in [src/\_\_tests\_\_/hardening.test.ts](src/__tests__/hardening.test.ts): code reuse revokes, S256-only PKCE, audience on every token, refresh reuse detection, single-use consent, hashed tokens at rest, SSRF-guarded client ID metadata documents. The broader review of its design is in ngdpbase's `docs/planning/authentication.md`.
+- __[ngdpbase](https://github.com/jwilleke/ngdpbase)__ — its guiding framework and configuration conventions (a reserved key namespace, environment-only secrets, an audit event registry named `{target}-{action}`, fail closed) are followed here, and its authentication plan is the source of this package's design decisions.
+- __Specifications__: [RFC 6749](https://www.rfc-editor.org/rfc/rfc6749) (OAuth 2.0), [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636) (PKCE), [RFC 8628](https://www.rfc-editor.org/rfc/rfc8628) (device authorization grant), [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707) (resource indicators), [RFC 8176](https://www.rfc-editor.org/rfc/rfc8176) (`amr` values), [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html), the OAuth Client ID Metadata Document draft, and NIST SP 800-63B for the assurance levels a host reports as `acr`.
+- __[OpenID Connect Playground](https://openidconnect.net/)__ (Auth0) — testing against it surfaced the per-client PKCE exemption for confidential clients.
+
 ## License
 
 [MIT](LICENSE)
