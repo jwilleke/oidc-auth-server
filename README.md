@@ -79,6 +79,10 @@ const auth = createAuthServer(optionsFromConfig(config, { interactionUrl, findAc
 
 Options passed directly to `createAuthServer` take the shipped defaults for anything left unset.
 
+### Mounting under a path
+
+An issuer with a path, such as `https://example.com/oidc`, serves every endpoint below that path. Mount the handler behind a prefix-stripping router (`app.use('/oidc', auth.handler)` in Express) or hand it the full path from a plain `http` server; both work. Cookies are scoped to the issuer's path, so they are never sent with the host's own requests. Point `interactionUrl` at a host route inside the same path (`/oidc/interaction/:uid`) and keep that route out of the handler, as the example above does at the root.
+
 ### PKCE exemption for confidential clients
 
 PKCE (S256) is required from every client. A confidential client — one that authenticates at the token endpoint with a secret or key — may opt out with `require_pkce: false` in its client metadata, for server-side apps and test tools that do not send a code challenge (the [OpenID Connect Playground](https://openidconnect.net/) is one: code flow, `client_secret` in the token request, no PKCE). A public client (`token_endpoint_auth_method: "none"`) with the exemption refuses the boot. A challenge an exempt client does send is still verified.

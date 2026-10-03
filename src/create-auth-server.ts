@@ -43,6 +43,35 @@ function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | u
   return extra ? { acr: extra.acr, amr: extra.amr } : undefined;
 }
 
+/** The issuer's path without a trailing slash: '' for an issuer at the root, '/oidc' at <host>/oidc. */
+function mountPathOf(issuer: string): string {
+  return new URL(issuer).pathname.replace(/\/+$/, '');
+}
+
+/**
+ * node-oidc-provider routes only on the path below its mount: a router that strips the prefix
+ * (Express `app.use('/oidc', handler)`) gives it that. A host that passes the full path, such as
+ * a plain `http` server, would get a 404 for every endpoint, so the prefix is removed here when the
+ * request still carries it. A request already stripped never starts with it, unless its own path
+ * repeats the mount — and no endpoint does. `originalUrl` keeps the full path, as Express sets it:
+ * the provider builds every URL it advertises from the difference between the two.
+ */
+function underMount(
+  mount: string,
+  handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>
+): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
+  if (!mount) return handler;
+  return (req, res) => {
+    const url = req.url ?? '/';
+    if (url === mount || url.startsWith(`${mount}/`) || url.startsWith(`${mount}?`)) {
+      (req as IncomingMessage & { originalUrl?: string }).originalUrl ??= url;
+      req.url = url.slice(mount.length) || '/';
+      if (req.url.startsWith('?')) req.url = `/${req.url}`;
+    }
+    return handler(req, res);
+  };
+}
+
 /** Paths a health probe may fetch over plain HTTP: they set no cookie and carry no secret. */
 const PROBE_PATHS = /\/(\.well-known\/openid-configuration|jwks)$/;
 
@@ -96,7 +125,13 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
     adapter: hashingAdapter(options.adapter ?? createMemoryAdapter()),
     clients: options.clients ?? (defaults['oidc-auth-server.clients'] as ClientMetadata[]),
     jwks: options.jwks,
-    cookies: { keys: options.cookieKeys },
+    // Scoped to the issuer's path, so an issuer mounted at <host>/oidc never sends its session
+    // cookie with the host's own requests. The interaction cookies set a narrower path themselves.
+    cookies: {
+      keys: options.cookieKeys,
+      long: { httpOnly: true, sameSite: 'lax', path: mountPathOf(options.issuer) || '/' },
+      short: { httpOnly: true, sameSite: 'lax', path: mountPathOf(options.issuer) || '/' }
+    },
     interactions: { url: (_ctx, interaction) => options.interactionUrl(interaction.uid) },
     acrValues: options.acrValues ?? (defaults['oidc-auth-server.acr-values'] as string[]),
     // Standalone claims are issued only when a client asks for them. How the person signed in is
@@ -196,7 +231,7 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   if (options.audit) audit = attachAudit(provider, options.audit, registry);
   return {
     provider,
-    handler: provider.callback(),
+    handler: underMount(mountPathOf(options.issuer), provider.callback()),
     interactions: interactionHelpers(provider),
     auditFailures: audit.failures
   };
