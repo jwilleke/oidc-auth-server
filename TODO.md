@@ -21,10 +21,6 @@ last_updated: "2026-10-02"
 
 - [#40](https://github.com/jwilleke/oidc-auth-server/issues/40) — Make the repository public
 - [#39](https://github.com/jwilleke/oidc-auth-server/issues/39) — Enable public-repo security settings
-- [#38](https://github.com/jwilleke/oidc-auth-server/issues/38) — README: status line for a public, released package
-- [#37](https://github.com/jwilleke/oidc-auth-server/issues/37) — Scan full git history for secrets in CI
-- [#36](https://github.com/jwilleke/oidc-auth-server/issues/36) — Explicit least-privilege permissions on every workflow
-- [#35](https://github.com/jwilleke/oidc-auth-server/issues/35) — SECURITY.md: how to report a vulnerability
 - [#34](https://github.com/jwilleke/oidc-auth-server/issues/34) — Publish @jwilleke/oidc-auth-server to npmjs on each release
 - [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
 
