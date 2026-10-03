@@ -79,10 +79,10 @@ Set `oidc-auth-server.device-flow.enabled` to `true`. The device calls `/device/
 
 ## Samples
 
-Planned under `examples/`:
+Under `examples/`:
 
+- `node-http` — a host on Node's built-in `http`, with a stand-in sign-in and consent page, two demo accounts and the device flow on. Built: [examples/node-http](examples/node-http)
 - `express` — an Express host
-- `node-http` — a host on Node's built-in `http`
 - `react` — a browser client (authorization code + PKCE)
 - `angular` — a browser client
 - `device-cli` — a device-flow client
@@ -97,6 +97,18 @@ npm run typecheck
 npm test
 npm run build
 ```
+
+Run the example host and drive it end to end over real HTTP:
+
+```bash
+npm run dev                                   # http://localhost:9000, throwaway development keys
+npm run smoke                                 # 10 checks against it: code flow, PKCE, UserInfo,
+                                              # refresh rotation and reuse, code reuse, resources,
+                                              # denied consent, device flow and slow_down
+npm run smoke -- https://oidc.example.com     # the same checks against a deployed example host
+```
+
+The example keeps everything in memory, so it runs only with an `http` issuer (development mode). Under an `https` issuer `createAuthServer` refuses to start until a storage adapter is supplied, as it should; a public deployment needs one, plus `OIDC_AUTH_SERVER_JWKS` and `OIDC_AUTH_SERVER_COOKIE_KEYS`.
 
 Agent and contributor rules are in [AGENTS.md](AGENTS.md).
 

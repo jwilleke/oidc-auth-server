@@ -91,7 +91,10 @@ export function loadConfig(options: LoadConfigOptions = {}): Config {
 }
 
 /** The host's code-level parts: what a config file cannot hold. */
-export type HostCallbacks = Pick<AuthServerOptions, 'interactionUrl' | 'findAccount' | 'adapter'>;
+export type HostCallbacks = Pick<
+  AuthServerOptions,
+  'interactionUrl' | 'findAccount' | 'adapter' | 'audit'
+>;
 
 /** Turn a loaded config and the host's callbacks into `createAuthServer` options. */
 export function optionsFromConfig(config: Config, callbacks: HostCallbacks): AuthServerOptions {

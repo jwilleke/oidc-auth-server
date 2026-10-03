@@ -71,6 +71,11 @@ export default tseslint.config(
       ]
     }
   },
+  // Runnable examples: a server and a smoke-test CLI whose output is the console.
+  {
+    files: ['examples/**/*.ts'],
+    rules: { 'no-console': 'off' }
+  },
   {
     ignores: ['dist/', 'node_modules/', 'tools/', 'eslint.config.mjs', 'packages/agent-kit/']
   }
