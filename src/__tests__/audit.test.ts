@@ -16,7 +16,8 @@ describe('audit event registry', () => {
   it('declares every event in {target}-{action} form with a description', () => {
     const events = auditEventsFromConfig(defaultConfig()['oidc-auth-server.audit.events']);
     for (const [name, definition] of Object.entries(events)) {
-      expect(name).toMatch(/^[a-z]+-[a-z]+$/);
+      // oidc-prefixed targets cannot collide with a host registry's names (#33).
+      expect(name).toMatch(/^oidc[a-z]+-[a-z]+$/);
       expect(definition?.description).toBeTruthy();
       expect(definition?.onFailure).toBe('continue');
     }
@@ -26,7 +27,7 @@ describe('audit event registry', () => {
     expect(() =>
       assertSafeOptions(
         baseOptions({
-          auditEvents: { 'token-issue': { onFailure: 'refuse' as never, description: 'x' } }
+          auditEvents: { 'oidctoken-issue': { onFailure: 'refuse' as never, description: 'x' } }
         })
       )
     ).toThrow(/cannot be honoured/);
@@ -61,8 +62,8 @@ describe('audit reporting', () => {
           seen.push(e.event);
         },
         auditEvents: {
-          'grant-revoke': { onFailure: 'continue', description: 'x', enabled: false },
-          'server-error': null
+          'oidcgrant-revoke': { onFailure: 'continue', description: 'x', enabled: false },
+          'oidcserver-error': null
         }
       })
     );

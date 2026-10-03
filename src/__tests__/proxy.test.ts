@@ -90,7 +90,7 @@ describe('https issuer behind a TLS-terminating proxy', () => {
         },
         body: new URLSearchParams({ grant_type: 'authorization_code', client_id: 'app', code: 'x' })
       });
-      expect(audited.find((e) => e.event === 'token-error')?.ip).toBe('203.0.113.7');
+      expect(audited.find((e) => e.event === 'oidctoken-error')?.ip).toBe('203.0.113.7');
     } finally {
       await server.close();
     }

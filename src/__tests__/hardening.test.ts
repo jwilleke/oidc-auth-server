@@ -56,7 +56,7 @@ describe('1. authorization code reuse revokes the tokens it issued', () => {
     audited.length = 0;
     const second = await exchange(code, verifier);
     expect(second.status).toBe(400);
-    expect(audited.map((e) => e.event)).toContain('token-reuse');
+    expect(audited.map((e) => e.event)).toContain('oidctoken-reuse');
     expect(((await second.json()) as Tokens).error).toBe('invalid_grant');
     expect((await userinfo(first.access_token)).status).toBe(401);
   });

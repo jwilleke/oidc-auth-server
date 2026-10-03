@@ -159,8 +159,8 @@ describe('audit', () => {
     const code = redirect.searchParams.get('code')!;
     const tokens = (await (await exchange(code, verifier)).json()) as Tokens & { id_token: string };
 
-    expect(names()).toEqual(expect.arrayContaining(['authorization-allow', 'token-issue']));
-    const issue = audited.find((e) => e.event === 'token-issue')!;
+    expect(names()).toEqual(expect.arrayContaining(['oidcauthorize-allow', 'oidctoken-issue']));
+    const issue = audited.find((e) => e.event === 'oidctoken-issue')!;
     expect(issue).toMatchObject({ clientId: 'app', grantType: 'authorization_code' });
     expect(issue.at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
@@ -175,19 +175,19 @@ describe('audit', () => {
     harness.host = (a, req, res) =>
       a.interactions.fail(req, res, 'access_denied', 'wrong password');
     await authorize(new Browser(harness.baseUrl));
-    expect(audited.find((e) => e.event === 'authorization-deny')).toMatchObject({
+    expect(audited.find((e) => e.event === 'oidcauthorize-deny')).toMatchObject({
       error: 'access_denied',
       errorDescription: 'wrong password'
     });
   });
 
-  it('reports refresh token reuse as token-reuse and the grant revocation', async () => {
+  it('reports refresh token reuse as oidctoken-reuse and the grant revocation', async () => {
     const first = await offlineTokens();
     await refresh(first.refresh_token!);
     audited.length = 0;
     await refresh(first.refresh_token!);
-    expect(names()).toEqual(expect.arrayContaining(['token-reuse', 'grant-revoke']));
-    expect(names()).not.toContain('token-error');
+    expect(names()).toEqual(expect.arrayContaining(['oidctoken-reuse', 'oidcgrant-revoke']));
+    expect(names()).not.toContain('oidctoken-error');
   });
 
   it('reports a revoked token without its value', async () => {
@@ -199,7 +199,7 @@ describe('audit', () => {
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ client_id: 'app', token: access_token })
     });
-    expect(audited.find((e) => e.event === 'token-revoke')).toMatchObject({
+    expect(audited.find((e) => e.event === 'oidctoken-revoke')).toMatchObject({
       tokenKind: 'AccessToken',
       clientId: 'app',
       accountId: 'alice'

@@ -147,7 +147,7 @@ describe('device authorization grant', () => {
       acr: 'phrh',
       amr: ['hwk', 'user']
     });
-    expect(audited.some((e) => e.event === 'token-issue' && e.grantType === DEVICE_GRANT)).toBe(
+    expect(audited.some((e) => e.event === 'oidctoken-issue' && e.grantType === DEVICE_GRANT)).toBe(
       true
     );
   });
@@ -157,7 +157,7 @@ describe('device authorization grant', () => {
     audited.length = 0;
     await poll(device.device_code);
     expect((await poll(device.device_code)).body.error).toBe('slow_down');
-    expect(audited.filter((e) => e.event === 'token-error')).toEqual([]);
+    expect(audited.filter((e) => e.event === 'oidctoken-error')).toEqual([]);
   });
 
   it('answers access_denied when the person refuses', async () => {

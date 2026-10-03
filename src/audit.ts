@@ -6,15 +6,15 @@ import type { KoaContextWithOIDC } from 'oidc-provider';
  * config/app-default-config.json declares the same names; a test holds the two equal.
  */
 export const AUDIT_EVENT_NAMES = [
-  'authorization-allow',
-  'authorization-deny',
-  'token-issue',
-  'token-error',
-  'token-reuse',
-  'token-revoke',
-  'grant-revoke',
-  'userinfo-error',
-  'server-error'
+  'oidcauthorize-allow',
+  'oidcauthorize-deny',
+  'oidctoken-issue',
+  'oidctoken-error',
+  'oidctoken-reuse',
+  'oidctoken-revoke',
+  'oidcgrant-revoke',
+  'oidcuserinfo-error',
+  'oidcserver-error'
 ] as const;
 
 export type AuditEventName = (typeof AUDIT_EVENT_NAMES)[number];
@@ -36,7 +36,7 @@ export interface AuditEvent {
   grantId?: string;
   grantType?: string;
   scope?: string;
-  /** The token kind, for token-revoke. */
+  /** The token kind, for oidctoken-revoke. */
   tokenKind?: string;
   error?: string;
   errorDescription?: string;
@@ -113,26 +113,26 @@ export function attachAudit(
   });
 
   provider.on('authorization.success', (ctx: KoaContextWithOIDC) =>
-    report('authorization-allow', ctx, { scope: paramString(ctx, 'scope') })
+    report('oidcauthorize-allow', ctx, { scope: paramString(ctx, 'scope') })
   );
   provider.on('authorization.error', (ctx: KoaContextWithOIDC, error: OAuthError) =>
-    report('authorization-deny', ctx, errorFields(error))
+    report('oidcauthorize-deny', ctx, errorFields(error))
   );
   provider.on('grant.success', (ctx: KoaContextWithOIDC) =>
-    report('token-issue', ctx, { grantType: paramString(ctx, 'grant_type') })
+    report('oidctoken-issue', ctx, { grantType: paramString(ctx, 'grant_type') })
   );
   provider.on('grant.error', (ctx: KoaContextWithOIDC, error: OAuthError) => {
     if (WAITING.has(error.error ?? '')) return;
-    report(REUSE.test(error.error_detail ?? '') ? 'token-reuse' : 'token-error', ctx, {
+    report(REUSE.test(error.error_detail ?? '') ? 'oidctoken-reuse' : 'oidctoken-error', ctx, {
       grantType: paramString(ctx, 'grant_type'),
       ...errorFields(error)
     });
   });
   provider.on('grant.revoked', (ctx: KoaContextWithOIDC, grantId: string) =>
-    report('grant-revoke', ctx, { grantId })
+    report('oidcgrant-revoke', ctx, { grantId })
   );
   const tokenDestroyed = (token: TokenLike): void =>
-    report('token-revoke', undefined, {
+    report('oidctoken-revoke', undefined, {
       tokenKind: token.kind,
       clientId: token.clientId,
       accountId: token.accountId,
@@ -141,10 +141,10 @@ export function attachAudit(
   provider.on('access_token.destroyed', tokenDestroyed);
   provider.on('refresh_token.destroyed', tokenDestroyed);
   provider.on('userinfo.error', (ctx: KoaContextWithOIDC, error: OAuthError) =>
-    report('userinfo-error', ctx, errorFields(error))
+    report('oidcuserinfo-error', ctx, errorFields(error))
   );
   provider.on('server_error', (ctx: KoaContextWithOIDC, error: Error) =>
-    report('server-error', ctx, { error: 'server_error', errorDescription: error.message })
+    report('oidcserver-error', ctx, { error: 'server_error', errorDescription: error.message })
   );
 
   return { failures: () => failures };
