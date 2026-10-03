@@ -72,7 +72,7 @@ OIDC_AUTH_SERVER_JWKS={"keys":[…]}
 OIDC_AUTH_SERVER_COOKIE_KEYS=…
 ```
 
-`/opt/oidc-host/config/app-custom-config.json`:
+`/opt/oidc-host/data/config/app-custom-config.json`:
 
 ```json
 {
@@ -151,7 +151,7 @@ HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1:9000/.wel
 CMD ["node", "dist/server.js"]
 ```
 
-`config/app-custom-config.json` is part of the image or mounted at run time; secrets are passed as environment variables and never baked in.
+Per-instance settings live in `data/config/app-custom-config.json`, mounted at run time rather than baked into the image; secrets are passed as environment variables and never baked in.
 
 `docker-compose.yml`, with Traefik in front for TLS:
 
@@ -162,7 +162,7 @@ services:
     restart: unless-stopped
     env_file: .env # OIDC_AUTH_SERVER_JWKS, OIDC_AUTH_SERVER_COOKIE_KEYS
     volumes:
-      - ./app-custom-config.json:/app/config/app-custom-config.json:ro
+      - ./app-custom-config.json:/app/data/config/app-custom-config.json:ro
     labels:
       - traefik.enable=true
       - traefik.http.routers.oidc.rule=Host(`oidc.example.com`)
@@ -224,7 +224,7 @@ spec:
             - { name: NODE_ENV, value: production }
           volumeMounts:
             - name: config
-              mountPath: /app/config/app-custom-config.json
+              mountPath: /app/data/config/app-custom-config.json
               subPath: app-custom-config.json
               readOnly: true
           readinessProbe:

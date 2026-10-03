@@ -142,7 +142,7 @@ export function startExample(
   port = PORT
 ): Promise<{ close: () => Promise<void>; auth: AuthServer }> {
   const config = loadConfig({
-    customConfigPath: 'config/app-custom-config.json',
+    customConfigPath: 'data/config/app-custom-config.json',
     customConfig: {
       'oidc-auth-server.issuer': ISSUER,
       'oidc-auth-server.development': development,

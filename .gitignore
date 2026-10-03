@@ -58,4 +58,6 @@ Thumbs.db
 .kit-check/
 .continue/
 .agents/
-config/app-custom-config.json
+# Instance data: per-deployment config (data/config/app-custom-config.json) and anything a
+# running instance writes. Never committed.
+data/

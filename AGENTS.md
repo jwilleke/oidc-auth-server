@@ -322,10 +322,10 @@ npm run typecheck        # TypeScript type checking without emit
 
 ## Notes & Context
 
-- __Deployment:__ `https://oidc.nerdsbythehour.com` was the first planned issuer (operator, 2026-10-02) and is set in the gitignored `config/app-custom-config.json`; the standalone track below. The shipped defaults stay host-neutral.
+- __Deployment:__ `https://oidc.example.com` was the first planned issuer (operator, 2026-10-02) and is set in the gitignored `data/config/app-custom-config.json`; the standalone track below. The shipped defaults stay host-neutral.
 - __Two deployment tracks__ (operator, 2026-10-03):
   - __Embedded in ngdpbase at `<host>/oidc`__ by a config-gated core `OidcManager` ([ngdpbase#1578](https://github.com/jwilleke/ngdpbase/issues/1578)). ngdpbase supplies sign-in, accounts, audit and storage; this package reaches it as a published npm package ([#34](https://github.com/jwilleke/oidc-auth-server/issues/34)). Recorded in ngdpbase's `docs/planning/authentication.md`, which also reserves the `oidc-auth-server` configuration namespace there for this package — keep every setting under it.
-  - __Standalone at `oidc.nerdsbythehour.com`__ ([#31](https://github.com/jwilleke/oidc-auth-server/issues/31)): its own image, deployed by [mj-infra-flux](https://github.com/jwilleke/mj-infra-flux) (Flux image automation on a public GHCR semver tag, Kustomize, SOPS secrets; changes there go through PRs or issues on that repo). Where its users sign in is still open ([#27](https://github.com/jwilleke/oidc-auth-server/issues/27)).
+  - __Standalone at `oidc.example.com`__ ([#31](https://github.com/jwilleke/oidc-auth-server/issues/31)): its own image, deployed by [mj-infra-flux](https://github.com/jwilleke/mj-infra-flux) (Flux image automation on a public GHCR semver tag, Kustomize, SOPS secrets; changes there go through PRs or issues on that repo). Where its users sign in is still open ([#27](https://github.com/jwilleke/oidc-auth-server/issues/27)).
 
 Add any additional notes, context, or information that agents should know here. Examples:
 
