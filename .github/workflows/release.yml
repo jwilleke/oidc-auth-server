@@ -36,6 +36,9 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      # Secrets cannot be read in `if:`; this exposes only whether one is set.
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,6 +73,14 @@ jobs:
             echo "::error::the package would include test, private or instance files"
             exit 1
           fi
+
+      # Fails here, naming the cause, instead of a misleading E404 at publish time.
+      # Prints the npm username the credential belongs to, never the credential.
+      - name: Check npm authentication
+        if: env.HAS_NPM_TOKEN == 'true' # with trusted publishing there is no token to check
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm whoami
 
       - name: Publish
         env:
