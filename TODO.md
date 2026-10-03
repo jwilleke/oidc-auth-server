@@ -19,7 +19,6 @@ last_updated: "2026-10-02"
 ## 🟠 P1
 
 - [#34](https://github.com/jwilleke/oidc-auth-server/issues/34) — Publish @jwilleke/oidc-auth-server to an npm registry on each release
-- [#33](https://github.com/jwilleke/oidc-auth-server/issues/33) — Audit event names collide with ngdpbase's registry
 - [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
 
 ## 🟡 P2
