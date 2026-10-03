@@ -72,6 +72,26 @@ function underMount(
   };
 }
 
+/**
+ * node-oidc-provider builds every URL it advertises — discovery's endpoints, the device
+ * verification URI, redirects to the interaction page — from the request's Host (or, behind a
+ * trusted proxy, X-Forwarded-Host). A forged header would then make discovery point clients at
+ * someone else's endpoints, and a shared cache would keep serving it. The issuer is configured, so
+ * its host is the only one this server answers as: the request's is replaced before the provider
+ * reads it.
+ */
+function atIssuerHost(
+  issuer: string,
+  handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>
+): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
+  const host = new URL(issuer).host;
+  return (req, res) => {
+    req.headers.host = host;
+    delete req.headers['x-forwarded-host'];
+    return handler(req, res);
+  };
+}
+
 /** Paths a health probe may fetch over plain HTTP: they set no cookie and carry no secret. */
 const PROBE_PATHS = /\/(\.well-known\/openid-configuration|jwks)$/;
 
@@ -231,7 +251,10 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   if (options.audit) audit = attachAudit(provider, options.audit, registry);
   return {
     provider,
-    handler: underMount(mountPathOf(options.issuer), provider.callback()),
+    handler: atIssuerHost(
+      options.issuer,
+      underMount(mountPathOf(options.issuer), provider.callback())
+    ),
     interactions: interactionHelpers(provider),
     auditFailures: audit.failures
   };

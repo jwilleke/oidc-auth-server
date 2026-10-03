@@ -107,4 +107,34 @@ describe('https issuer behind a TLS-terminating proxy', () => {
       await server.close();
     }
   });
+
+  it('advertises the issuer host, whatever Host or X-Forwarded-Host the request carries', async () => {
+    for (const trustProxy of [false, true]) {
+      const server = await serve(trustProxy);
+      try {
+        const response = await fetch(`${server.baseUrl}/.well-known/openid-configuration`, {
+          headers: {
+            host: 'evil.example',
+            'x-forwarded-host': 'evil.example',
+            'x-forwarded-proto': 'https'
+          }
+        });
+        expect(response.status).toBe(200);
+        const discovery = (await response.json()) as Record<string, unknown>;
+        for (const [key, value] of Object.entries(discovery)) {
+          if (key.endsWith('_endpoint') || key === 'jwks_uri') {
+            const url = new URL(value as string);
+            expect(url.host, `${key} with trustProxy ${String(trustProxy)}`).toBe(
+              'auth.example.com'
+            );
+            // Untrusted, the hop is plain HTTP and Koa reports it as such: only health probes are
+            // answered there. Trusted, the proxy's https is believed.
+            if (trustProxy) expect(url.protocol, key).toBe('https:');
+          }
+        }
+      } finally {
+        await server.close();
+      }
+    }
+  });
 });
