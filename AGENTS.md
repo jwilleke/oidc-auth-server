@@ -322,8 +322,8 @@ npm run typecheck        # TypeScript type checking without emit
 
 ## Notes & Context
 
-- __Deployment:__ the operator's instance is served at `https://oidc.nerdsbythehour.com` (operator, 2026-10-02). Set as `oidc-auth-server.issuer` in the gitignored `config/app-custom-config.json`; the shipped defaults stay host-neutral.
-- __Deployed by [mj-infra-flux](https://github.com/jwilleke/mj-infra-flux)__ (operator, 2026-10-03): Flux, Kustomize, SOPS-encrypted secrets. Releases reach it as a public GHCR image tagged with the bare semver (`ghcr.io/jwilleke/oidc-auth-server:X.Y.Z`); its Flux `ImagePolicy` follows a semver range and rewrites the `$imagepolicy` marker in the app's deployment. Changes there go through PRs or issues on that repo, never a direct push.
+- __Deployment:__ `https://oidc.nerdsbythehour.com` was the first planned issuer (operator, 2026-10-02) and is set in the gitignored `config/app-custom-config.json`; superseded by the `<host>/oidc` decision below unless kept as an extra ingress route. The shipped defaults stay host-neutral.
+- __Embedded in ngdpbase at `<host>/oidc`__ (operator, 2026-10-03; [#27](https://github.com/jwilleke/oidc-auth-server/issues/27)): no separate service, image or hostname. ngdpbase supplies sign-in, accounts, audit and storage, and its image reaches the cluster through [mj-infra-flux](https://github.com/jwilleke/mj-infra-flux) (Flux, Kustomize, SOPS secrets; changes there go through PRs or issues on that repo). This package releases as an npm package ngdpbase installs ([#29](https://github.com/jwilleke/oidc-auth-server/issues/29)). The decision is recorded in ngdpbase's `docs/planning/authentication.md`, which also reserves the `oidc-auth-server` configuration namespace there for this package (operator, 2026-10-03) — keep every setting under it.
 
 Add any additional notes, context, or information that agents should know here. Examples:
 
