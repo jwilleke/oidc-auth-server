@@ -6,7 +6,7 @@
 // It signs in through the example host's pages, so it needs that host (or one whose sign-in
 // and consent forms take the same fields). Exits non-zero on any failure.
 
-import { Browser, decodeJwt, pkcePair } from '../../src/test-support.js';
+import { Browser, decodeJwt, pkcePair } from '../../src/__tests__/test-support.js';
 
 const BASE = (process.argv[2] ?? process.env.SMOKE_URL ?? 'http://localhost:9000').replace(
   /\/$/,

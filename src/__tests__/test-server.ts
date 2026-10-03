@@ -1,9 +1,9 @@
 // A booted server with a stub host, shared by the flow and hardening tests; excluded from the
 // build. Each test file gets its own module instance, so its own server and state.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { AuditEvent } from './audit.js';
-import { createAuthServer, type AuthServer } from './create-auth-server.js';
-import type { AuthServerOptions } from './options.js';
+import type { AuditEvent } from '../audit.js';
+import { createAuthServer, type AuthServer } from '../create-auth-server.js';
+import type { AuthServerOptions } from '../options.js';
 import { baseOptions, Browser, listen, pkcePair } from './test-support.js';
 
 export const REDIRECT_URI = 'http://127.0.0.1/cb';

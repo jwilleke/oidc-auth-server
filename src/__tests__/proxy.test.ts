@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { AuditEvent } from './audit.js';
-import { createAuthServer } from './create-auth-server.js';
-import { createMemoryAdapter } from './memory-adapter.js';
+import type { AuditEvent } from '../audit.js';
+import { createAuthServer } from '../create-auth-server.js';
+import { createMemoryAdapter } from '../memory-adapter.js';
 import { baseOptions, listen, pkcePair } from './test-support.js';
 
 // An https issuer served over a plain-HTTP hop: what every TLS-terminating proxy, Docker port

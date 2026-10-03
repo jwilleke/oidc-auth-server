@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { allowMetadataFetch, guardedFetch } from './outgoing-fetch.js';
+import { allowMetadataFetch, guardedFetch } from '../outgoing-fetch.js';
 
 describe('guardedFetch', () => {
   it('refuses when the SSRF-guarding dispatcher is missing', async () => {

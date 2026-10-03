@@ -3,7 +3,7 @@ import { createHash, generateKeyPairSync, randomBytes } from 'node:crypto';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { JWKS } from 'oidc-provider';
-import type { AuthServerOptions } from './options.js';
+import type { AuthServerOptions } from '../options.js';
 
 /** The stub host's accounts. */
 export const ACCOUNTS: Record<string, Record<string, unknown>> = {

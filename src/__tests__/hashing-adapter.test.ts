@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AdapterFactory, AdapterPayload } from 'oidc-provider';
-import { hashTokenId, hashingAdapter } from './hashing-adapter.js';
-import { createMemoryAdapter } from './memory-adapter.js';
+import { hashTokenId, hashingAdapter } from '../hashing-adapter.js';
+import { createMemoryAdapter } from '../memory-adapter.js';
 
 /** A memory adapter that also exposes every key and payload written to it. */
 function spyAdapter(): { factory: AdapterFactory; writes: Array<[string, AdapterPayload]> } {

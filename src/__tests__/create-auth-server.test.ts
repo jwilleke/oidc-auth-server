@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createAuthServer } from './create-auth-server.js';
-import { assertSafeOptions } from './options.js';
+import { createAuthServer } from '../create-auth-server.js';
+import { assertSafeOptions } from '../options.js';
 import { baseOptions, listen, testJwks } from './test-support.js';
 
 describe('assertSafeOptions', () => {

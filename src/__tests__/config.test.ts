@@ -2,8 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { defaultConfig, loadConfig, optionsFromConfig } from './config.js';
-import { assertSafeOptions } from './options.js';
+import { defaultConfig, loadConfig, optionsFromConfig } from '../config.js';
+import { assertSafeOptions } from '../options.js';
 import { testJwks } from './test-support.js';
 
 // Only this test's own temporary directory is ever removed.

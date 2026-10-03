@@ -3,7 +3,7 @@
 // shows here, in one place. Functional behaviour lives in flow.test.ts.
 import type { AdapterFactory } from 'oidc-provider';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createMemoryAdapter } from './memory-adapter.js';
+import { createMemoryAdapter } from '../memory-adapter.js';
 import { Browser, decodeJwt, pkcePair } from './test-support.js';
 import {
   API,

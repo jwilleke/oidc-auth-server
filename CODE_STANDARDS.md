@@ -176,7 +176,7 @@ function validateEmail(email: string): boolean {
 We use [Vitest](https://vitest.dev/) as the test runner. Configuration: `vitest.config.ts`
 
 - Write tests for all public functions
-- Place test files alongside source: `foo.ts` -> `foo.test.ts`
+- Place test files in `src/__tests__/`, named after what they test: `src/foo.ts` -> `src/__tests__/foo.test.ts`. Shared test helpers live there too; the build excludes the folder (operator, 2026-10-03)
 - Use test naming convention: `describe()` for groups, `it()` for specs
 - Aim for >80% code coverage
 - Test behavior, not implementation details

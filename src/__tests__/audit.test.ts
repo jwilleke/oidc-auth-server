@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIT_EVENT_NAMES } from './audit.js';
-import { auditEventsFromConfig, defaultConfig } from './config.js';
-import { createAuthServer } from './create-auth-server.js';
-import { assertSafeOptions } from './options.js';
+import { AUDIT_EVENT_NAMES } from '../audit.js';
+import { auditEventsFromConfig, defaultConfig } from '../config.js';
+import { createAuthServer } from '../create-auth-server.js';
+import { assertSafeOptions } from '../options.js';
 import { baseOptions } from './test-support.js';
 
 describe('audit event registry', () => {
