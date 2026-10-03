@@ -310,6 +310,7 @@ npm run typecheck        # TypeScript type checking without emit
 - __Patch bumps may be deferred or consolidated.__ A chain of patch-only commits does not have to ship immediately; it can be rolled into the next minor/major or cut on request.
 - __Live version between releases is `git describe`.__ Between formal cuts, the working version is `vX.Y.Z-N-g<sha>` — the last tag, the number of commits since it (`N`), and the abbreviated commit SHA. This is expected and healthy: "we have 80 commits and no release" reads as *80 commits past the last tag*, not as something broken.
 - __A formal cut graduates `git describe` to a clean tag.__ Cutting a release replaces the `-N-g<sha>` suffix with a clean annotated `vX.Y.Z` tag at that commit. After the cut, `git describe` reports the clean tag again (until the next commit).
+- __A release tag also publishes to npm.__ `.github/workflows/release.yml` publishes `@jwilleke/oidc-auth-server` to npmjs on each `vX.Y.Z` tag, with provenance, after checking the tag matches `package.json` and that lint, typecheck, tests and build pass ([#34](https://github.com/jwilleke/oidc-auth-server/issues/34)). Authentication is npm trusted publishing, or an `NPM_TOKEN` secret before the package first exists.
 
 ## Session Workflow
 

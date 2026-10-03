@@ -1,0 +1,78 @@
+# Publish @jwilleke/oidc-auth-server to npmjs on each release tag (#34).
+#
+# /semver cuts an annotated vX.Y.Z tag and a GitHub release; this workflow turns
+# that tag into an npm package. It refuses to publish unless the tag matches
+# package.json and the tests, lint and build pass at that commit.
+#
+# Authentication, in order of preference:
+#   1. npm trusted publishing (OIDC): no stored token. Configure on npmjs under the
+#      package's settings -> Trusted publisher -> GitHub Actions, repository
+#      jwilleke/oidc-auth-server, workflow release.yml. Needs npm >= 11.5.1, which
+#      Node 24 ships.
+#   2. Otherwise an NPM_TOKEN repository secret (a granular automation token
+#      limited to this package). Needed for the very first publish, before the
+#      package exists on npmjs to configure a trusted publisher on.
+# Provenance is attached either way (id-token: write).
+
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to publish, e.g. v0.2.0'
+        required: true
+
+permissions:
+  contents: read
+  id-token: write # npm provenance and trusted publishing
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Tag must match package.json
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::tag $TAG does not match package.json version $version"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Contents check
+        run: |
+          npm pack --dry-run 2>&1 | tee pack.txt
+          if grep -qE "__tests__|private/|data/|\.env" pack.txt; then
+            echo "::error::the package would include test, private or instance files"
+            exit 1
+          fi
+
+      - name: Publish
+        env:
+          # Empty when trusted publishing is configured; npm then uses OIDC.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public

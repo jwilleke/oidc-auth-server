@@ -5,6 +5,17 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "config/app-default-config.json"
+  ],
   "scripts": {
     "dev": "tsx examples/node-http/server.ts",
     "smoke": "tsx examples/node-http/smoke.ts",
@@ -84,5 +95,9 @@
   "allowScripts": {
     "esbuild@0.28.1": true,
     "fsevents": false
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
