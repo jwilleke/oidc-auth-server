@@ -47,7 +47,6 @@ describe('hashingAdapter', () => {
     await accessTokens.upsert(TOKEN, { jti: TOKEN, kind: 'AccessToken' }, 60);
 
     expect(await accessTokens.find(hashTokenId(TOKEN))).toBeUndefined();
-    expect(await accessTokens.find(`sha256:${hashTokenId(TOKEN)}`)).toBeUndefined();
   });
 
   it('consumes and destroys through the hash', async () => {
@@ -61,17 +60,16 @@ describe('hashingAdapter', () => {
     expect(await codes.find(TOKEN)).toBeUndefined();
   });
 
-  it('saves a row found by user code back to the same key', async () => {
+  it('refuses a lookup by user code or uid on a hashed model', async () => {
+    const accessTokens = hashingAdapter(createMemoryAdapter())('AccessToken');
+    await expect(accessTokens.findByUserCode('ABCD')).rejects.toThrow(/cannot be found/);
+    await expect(accessTokens.findByUid('uid')).rejects.toThrow(/cannot be found/);
+  });
+
+  it('passes device codes through: the interaction row must find them again', async () => {
     const { factory, writes } = spyAdapter();
-    const deviceCodes = hashingAdapter(factory)('DeviceCode');
-    await deviceCodes.upsert(TOKEN, { jti: TOKEN, kind: 'DeviceCode', userCode: 'ABCD-EFGH' }, 60);
-
-    const found = await deviceCodes.findByUserCode('ABCD-EFGH');
-    expect(found).toBeDefined();
-    await deviceCodes.upsert(found!.jti!, { ...found!, accountId: 'alice' }, 60);
-
-    expect(writes[1][0]).toBe(writes[0][0]);
-    expect((await deviceCodes.find(TOKEN))?.accountId).toBe('alice');
+    await hashingAdapter(factory)('DeviceCode').upsert('dc', { jti: 'dc', userCode: 'ABCD' }, 60);
+    expect(writes[0][0]).toBe('dc');
   });
 
   it('revokes every token of a grant', async () => {

@@ -4,12 +4,15 @@ import type { Adapter, AdapterFactory, AdapterPayload } from 'oidc-provider';
 /**
  * Models whose id is itself a bearer credential. Their id is stored as a SHA-256 hash, so a
  * read of the host's storage yields nothing that can be presented to the server.
+ *
+ * Not here, deliberately: DeviceCode, Session and Interaction. The provider keeps a device code's
+ * id inside the interaction row and finds the code again by it, so any reference stored for that
+ * purpose is itself presentable — hashing would protect nothing. Each lives minutes, not days.
  */
 export const HASHED_MODELS: ReadonlySet<string> = new Set([
   'AccessToken',
   'AuthorizationCode',
   'RefreshToken',
-  'DeviceCode',
   'ClientCredentials',
   'BackchannelAuthenticationRequest',
   'RegistrationAccessToken',
@@ -17,21 +20,9 @@ export const HASHED_MODELS: ReadonlySet<string> = new Set([
   'PreAuthorizedCode'
 ]);
 
-/**
- * Marks an id that is already a hash. A lookup by uid or user code (the device flow) returns a
- * stored row whose plaintext id is unknown; the provider may save that row again, and the marker
- * keeps it from being hashed twice. Generated token ids never contain a colon.
- */
-const HASHED_PREFIX = 'sha256:';
-
-/** Hash a presented token value. Never honours the marker: a stored hash is not a credential. */
+/** Hash a token value. A stored hash presented as a token hashes again and finds nothing. */
 export function hashTokenId(id: string): string {
   return createHash('sha256').update(id).digest('base64url');
-}
-
-/** The storage key for an id the provider itself holds, which may already be a marked hash. */
-function storageKey(id: string): string {
-  return id.startsWith(HASHED_PREFIX) ? id.slice(HASHED_PREFIX.length) : hashTokenId(id);
 }
 
 /**
@@ -48,19 +39,20 @@ export function hashingAdapter(inner: AdapterFactory): AdapterFactory {
       stored: AdapterPayload | undefined | void,
       id: string
     ): AdapterPayload | undefined => (stored ? { ...stored, jti: id } : undefined);
-    const marked = (stored: AdapterPayload | undefined | void): AdapterPayload | undefined =>
-      stored ? { ...stored, jti: `${HASHED_PREFIX}${stored.jti}` } : undefined;
 
     return {
       upsert: (id, payload, expiresIn) => {
-        const hashed = storageKey(id);
+        const hashed = hashTokenId(id);
         return adapter.upsert(hashed, { ...payload, jti: hashed }, expiresIn);
       },
       find: async (id) => restore(await adapter.find(hashTokenId(id)), id),
-      findByUid: async (uid) => marked(await adapter.findByUid(uid)),
-      findByUserCode: async (userCode) => marked(await adapter.findByUserCode(userCode)),
-      consume: (id) => adapter.consume(storageKey(id)),
-      destroy: (id) => adapter.destroy(storageKey(id)),
+      // A hashed model's row found any other way would come back without its plaintext id, and a
+      // later save would land under a new key. None is looked up that way; refuse if one ever is.
+      findByUid: () => Promise.reject(new Error(`${name} is hashed and cannot be found by uid`)),
+      findByUserCode: () =>
+        Promise.reject(new Error(`${name} is hashed and cannot be found by user code`)),
+      consume: (id) => adapter.consume(hashTokenId(id)),
+      destroy: (id) => adapter.destroy(hashTokenId(id)),
       revokeByGrantId: (grantId) => adapter.revokeByGrantId(grantId)
     };
   };
