@@ -1,5 +1,6 @@
 import type { AdapterFactory, ClientMetadata, JWKS } from 'oidc-provider';
 import { AUDIT_EVENT_NAMES, type AuditEventDefinition, type AuditSink } from './audit.js';
+import type { DeviceFlowOptions } from './device-flow.js';
 
 /** Lifetimes in seconds. Defaults: `oidc-auth-server.ttl.*` in config/app-default-config.json. */
 export interface Ttl {
@@ -10,6 +11,7 @@ export interface Ttl {
   session: number;
   grant: number;
   refreshToken: number;
+  deviceCode: number;
 }
 
 /** An API that accepts this server's access tokens. Keyed by resource indicator. */
@@ -64,6 +66,8 @@ export interface AuthServerOptions {
   audit?: AuditSink;
   /** The audit event registry; defaults to `oidc-auth-server.audit.events`. null removes one. */
   auditEvents?: Record<string, AuditEventDefinition | null>;
+  /** Device authorization grant (RFC 8628). Off unless enabled. */
+  deviceFlow?: DeviceFlowOptions;
   /** Client ID Metadata Documents. Off unless enabled. */
   clientIdMetadataDocument?: ClientIdMetadataDocumentOptions;
   /** The `acr` values the host's sign-in can produce, advertised in discovery. */
@@ -148,6 +152,17 @@ export function assertSafeOptions(options: AuthServerOptions): void {
         `audit event ${name}: on-failure ${String(definition.onFailure)} cannot be honoured; events fire after the action, so only continue is possible`
       );
     }
+  }
+
+  const device = options.deviceFlow;
+  if (device?.userCodeCharset && !['base-20', 'digits'].includes(device.userCodeCharset)) {
+    problems.push('device flow user-code-charset must be base-20 or digits');
+  }
+  if (device?.userCodeMask !== undefined && (device.userCodeMask.match(/\*/g) ?? []).length < 8) {
+    problems.push('device flow user-code-mask must hold at least 8 characters (*)');
+  }
+  if (device?.throttle && !(device.throttle.maxAttempts > 0 && device.throttle.windowMinutes > 0)) {
+    problems.push('device flow throttle needs a positive max-attempts and window-minutes');
   }
 
   if (!options.adapter && !development) {

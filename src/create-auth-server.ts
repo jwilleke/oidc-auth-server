@@ -6,6 +6,13 @@ import Provider, {
   type KoaContextWithOIDC
 } from 'oidc-provider';
 import { attachAudit } from './audit.js';
+import {
+  applyPollingInterval,
+  applyUserCodeThrottle,
+  deviceFlowFeature,
+  userCodeThrottle,
+  type DeviceFlowOptions
+} from './device-flow.js';
 import { auditEventsFromConfig, defaultConfig, ttlFromConfig } from './config.js';
 import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
@@ -54,6 +61,16 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
     allowedHosts: defaults['oidc-auth-server.client-id-metadata-document.allowed-hosts'] as string[]
   };
 
+  const deviceFlow: DeviceFlowOptions = options.deviceFlow ?? {
+    enabled: defaults['oidc-auth-server.device-flow.enabled'] as boolean
+  };
+  const throttle = userCodeThrottle(
+    deviceFlow.throttle?.maxAttempts ??
+      (defaults['oidc-auth-server.device-flow.throttle.max-attempts'] as number),
+    deviceFlow.throttle?.windowMinutes ??
+      (defaults['oidc-auth-server.device-flow.throttle.window-minutes'] as number)
+  );
+
   const configuration: Configuration = {
     adapter: hashingAdapter(options.adapter ?? createMemoryAdapter()),
     clients: options.clients ?? (defaults['oidc-auth-server.clients'] as ClientMetadata[]),
@@ -95,12 +112,15 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
       Interaction: ttl.interaction,
       Session: ttl.session,
       Grant: ttl.grant,
-      RefreshToken: ttl.refreshToken
+      RefreshToken: ttl.refreshToken,
+      DeviceCode: ttl.deviceCode
     },
     pkce: { required: () => true },
     fetch: guardedFetch(),
     features: {
       devInteractions: { enabled: false },
+      // Not configured means not loaded: with the feature off the provider mounts no device routes.
+      deviceFlow: deviceFlow.enabled ? deviceFlowFeature(deviceFlow, throttle) : { enabled: false },
       clientIdMetadataDocument: {
         enabled: metadataDocuments.enabled,
         ack: 'draft-02',
@@ -127,6 +147,10 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
   };
 
   const provider = new Provider(options.issuer, configuration);
+  if (deviceFlow.enabled) {
+    applyUserCodeThrottle(provider, throttle);
+    applyPollingInterval(provider, ttl.deviceCode);
+  }
   const registry =
     options.auditEvents ?? auditEventsFromConfig(defaults['oidc-auth-server.audit.events']);
   let audit = { failures: (): number => 0 };

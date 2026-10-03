@@ -25,7 +25,7 @@ Status: early. Nothing is published yet.
 
 ## Usage
 
-What works today: authorization code flow with PKCE, the host sign-in seam, hashed token storage, UserInfo, refresh token rotation with reuse detection, audience-bound tokens for registered APIs, client ID metadata documents (off by default) and the audit hook. Device flow and the hardening checklist tests are tracked under [#13](https://github.com/jwilleke/oidc-auth-server/issues/13).
+What works today: authorization code flow with PKCE, the host sign-in seam, hashed token storage, UserInfo, refresh token rotation with reuse detection, audience-bound tokens for registered APIs, client ID metadata documents (off by default), the device authorization grant (off by default) and the audit hook. The hardening checklist tests are tracked under [#13](https://github.com/jwilleke/oidc-auth-server/issues/13).
 
 ```ts
 import { createServer } from 'node:http';
@@ -72,6 +72,10 @@ const auth = createAuthServer(optionsFromConfig(config, { interactionUrl, findAc
 ```
 
 Options passed directly to `createAuthServer` take the shipped defaults for anything left unset.
+
+### Device flow
+
+Set `oidc-auth-server.device-flow.enabled` to `true`. The device calls `/device/auth`; the person opens `/device`, enters the code, and is sent to the host's interaction route like any sign-in. `auth.interactions.details()` returns `deviceFlow: true` there, so the host can require step-up before approving a device. Pass `deviceFlow.pages` to `createAuthServer` to render the code pages in the host's own markup.
 
 ## Samples
 

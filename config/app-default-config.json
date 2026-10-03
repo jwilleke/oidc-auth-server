@@ -38,6 +38,13 @@
   "oidc-auth-server.client-id-metadata-document.enabled": false,
   "oidc-auth-server.client-id-metadata-document.allowed-hosts": [],
 
+  "_comment_device_flow": "OAuth 2.0 device authorization grant (RFC 8628) for devices, CLIs and AI/MCP clients without a browser. Off unless enabled. The person enters the user code on a page this server renders (the host may supply its own page markup), then signs in and approves through the host's interaction route, where the host applies step-up; PendingInteraction.deviceFlow says which flow it is. user-code-charset: base-20 (consonants without look-alikes) or digits. user-code-mask: * stands for one character. throttle: wrong user codes allowed per client IP within the window before the page answers 429; in process memory, so per instance. The device code lives ttl.device-code seconds. How long the resulting grant lasts is ttl.grant and ttl.refresh-token.",
+  "oidc-auth-server.device-flow.enabled": false,
+  "oidc-auth-server.device-flow.user-code-charset": "base-20",
+  "oidc-auth-server.device-flow.user-code-mask": "****-****",
+  "oidc-auth-server.device-flow.throttle.max-attempts": 10,
+  "oidc-auth-server.device-flow.throttle.window-minutes": 15,
+
   "_comment_resource_servers": "APIs that accept this server's access tokens, keyed by resource indicator (RFC 8707). A token for a resource names it as its audience, so one API cannot replay another's token. scope: the scopes that API accepts, space-separated. access-token-format: opaque or jwt. access-token-ttl: seconds, defaults to ttl.access-token. A request for a resource not listed here is refused. A token with no resource is good only at UserInfo. A map: a host adds an API without restating the others.",
   "oidc-auth-server.resource-servers": {},
 
@@ -49,6 +56,7 @@
   "oidc-auth-server.ttl.session": 86400,
   "oidc-auth-server.ttl.grant": 1209600,
   "oidc-auth-server.ttl.refresh-token": 1209600,
+  "oidc-auth-server.ttl.device-code": 600,
 
   "_comment_audit_events": "The audit event registry, keyed by event, in ngdpbase's shape. Names are {target}-{action}. The package reports each event to the host's audit callback; the host's audit manager records it. enabled: whether the event is reported; omitted means true; false is a decision on the record. null removes an entry. on-failure: what happens when the host's callback fails. Only continue is possible here: node-oidc-provider reports an event after the action has happened, so it cannot be refused — a refuse entry stops the boot rather than claim a guarantee nobody keeps. A failed report is counted (auditFailures). Events never carry a token, code or secret. A test holds this map and the code's list equal.",
   "oidc-auth-server.audit.events": {

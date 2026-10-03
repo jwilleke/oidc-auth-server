@@ -23,6 +23,11 @@ export interface PendingInteraction {
   scope: string;
   /** Set once sign-in has finished; the account that consent is for. */
   accountId?: string;
+  /**
+   * True when a device (RFC 8628) is asking. Approving gives a device a long-lived grant, so
+   * the host applies step-up here.
+   */
+  deviceFlow: boolean;
 }
 
 export interface InteractionHelpers {
@@ -65,7 +70,8 @@ export function interactionHelpers(provider: Provider): InteractionHelpers {
         prompt,
         clientId: String(interaction.params.client_id),
         scope: typeof interaction.params.scope === 'string' ? interaction.params.scope : '',
-        accountId: interaction.session?.accountId
+        accountId: interaction.session?.accountId,
+        deviceFlow: Boolean((interaction as { deviceCode?: string }).deviceCode)
       };
     },
 

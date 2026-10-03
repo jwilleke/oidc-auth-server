@@ -17,3 +17,9 @@ export {
   type AuditEventName,
   type AuditSink
 } from './audit.js';
+export {
+  DEFAULT_DEVICE_PAGES,
+  type DeviceFlowOptions,
+  type DevicePages,
+  type UserCodeProblem
+} from './device-flow.js';

@@ -121,6 +121,15 @@ export function optionsFromConfig(config: Config, callbacks: HostCallbacks): Aut
     ttl: ttlFromConfig(config),
     resourceServers: resourceServersFromConfig(get('resource-servers')),
     auditEvents: auditEventsFromConfig(get('audit.events')),
+    deviceFlow: {
+      enabled: get<boolean>('device-flow.enabled'),
+      userCodeCharset: get<'base-20' | 'digits'>('device-flow.user-code-charset'),
+      userCodeMask: get<string>('device-flow.user-code-mask'),
+      throttle: {
+        maxAttempts: get<number>('device-flow.throttle.max-attempts'),
+        windowMinutes: get<number>('device-flow.throttle.window-minutes')
+      }
+    },
     clientIdMetadataDocument: {
       enabled: get<boolean>('client-id-metadata-document.enabled'),
       allowedHosts: get<string[]>('client-id-metadata-document.allowed-hosts')
@@ -178,6 +187,7 @@ export function ttlFromConfig(config: Config): Ttl {
     interaction: get('interaction'),
     session: get('session'),
     grant: get('grant'),
-    refreshToken: get('refresh-token')
+    refreshToken: get('refresh-token'),
+    deviceCode: get('device-code')
   };
 }

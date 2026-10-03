@@ -119,6 +119,17 @@ describe('loadConfig', () => {
     );
   });
 
+  it('ships the device flow off, with a look-alike-free code and a throttle', () => {
+    const options = optionsFromConfig(defaultConfig(), callbacks);
+    expect(options.deviceFlow).toEqual({
+      enabled: false,
+      userCodeCharset: 'base-20',
+      userCodeMask: '****-****',
+      throttle: { maxAttempts: 10, windowMinutes: 15 }
+    });
+    expect(options.ttl?.deviceCode).toBe(600);
+  });
+
   it('refuses a jwks variable that is not JSON', () => {
     const config = loadConfig({ env: { OIDC_AUTH_SERVER_JWKS: '{nope' } });
     expect(() => optionsFromConfig(config, callbacks)).toThrow(/jwks is not valid JSON/);
