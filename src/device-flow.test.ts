@@ -152,10 +152,12 @@ describe('device authorization grant', () => {
     );
   });
 
-  it('answers slow_down to a device that polls too fast', async () => {
+  it('answers slow_down to a device that polls too fast, without audit noise', async () => {
     const device = await startDevice();
+    audited.length = 0;
     await poll(device.device_code);
     expect((await poll(device.device_code)).body.error).toBe('slow_down');
+    expect(audited.filter((e) => e.event === 'token-error')).toEqual([]);
   });
 
   it('answers access_denied when the person refuses', async () => {

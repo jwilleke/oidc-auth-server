@@ -63,6 +63,9 @@ interface TokenLike {
 
 const REUSE = /already (used|consumed)/;
 
+/** RFC 8628 waiting answers: a device polling as designed, not a refusal worth a record. */
+const WAITING = new Set(['authorization_pending', 'slow_down']);
+
 /**
  * Report node-oidc-provider's events to the host as registry-named audit events. Returns a
  * counter of reports the host's callback failed to take: the action has already happened by
@@ -118,12 +121,13 @@ export function attachAudit(
   provider.on('grant.success', (ctx: KoaContextWithOIDC) =>
     report('token-issue', ctx, { grantType: paramString(ctx, 'grant_type') })
   );
-  provider.on('grant.error', (ctx: KoaContextWithOIDC, error: OAuthError) =>
+  provider.on('grant.error', (ctx: KoaContextWithOIDC, error: OAuthError) => {
+    if (WAITING.has(error.error ?? '')) return;
     report(REUSE.test(error.error_detail ?? '') ? 'token-reuse' : 'token-error', ctx, {
       grantType: paramString(ctx, 'grant_type'),
       ...errorFields(error)
-    })
-  );
+    });
+  });
   provider.on('grant.revoked', (ctx: KoaContextWithOIDC, grantId: string) =>
     report('grant-revoke', ctx, { grantId })
   );
