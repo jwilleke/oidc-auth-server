@@ -19,8 +19,6 @@ last_updated: "2026-10-02"
 
 ## 🟠 P1
 
-- [#40](https://github.com/jwilleke/oidc-auth-server/issues/40) — Make the repository public
-- [#39](https://github.com/jwilleke/oidc-auth-server/issues/39) — Enable public-repo security settings
 - [#34](https://github.com/jwilleke/oidc-auth-server/issues/34) — Publish @jwilleke/oidc-auth-server to npmjs on each release
 - [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
 
@@ -30,7 +28,8 @@ last_updated: "2026-10-02"
 
 ## 🔵 In review
 
-*None.*
+- [#40](https://github.com/jwilleke/oidc-auth-server/issues/40) — Make the repository public
+- [#39](https://github.com/jwilleke/oidc-auth-server/issues/39) — Enable public-repo security settings
 
 ## ⏸ Deferred
 
