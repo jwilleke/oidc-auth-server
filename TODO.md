@@ -10,7 +10,7 @@ last_updated: "2026-10-02"
 
 ## 🔴 P0 — Security & Critical
 
-- [#26](https://github.com/jwilleke/oidc-auth-server/issues/26) — [SECURITY] braces — stack-exhaustion DoS via nested patterns (dev tooling)
+*None.*
 
 ## 🟣 Epics
 
@@ -22,7 +22,7 @@ last_updated: "2026-10-02"
 
 ## 🟡 P2
 
-*None.*
+- [#26](https://github.com/jwilleke/oidc-auth-server/issues/26) — [SECURITY] braces — stack-exhaustion DoS via nested patterns (dev tooling)
 
 ## 🔵 In review
 
