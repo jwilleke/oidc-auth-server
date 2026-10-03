@@ -19,7 +19,6 @@ last_updated: "2026-10-02"
 ## 🟠 P1
 
 - [#12](https://github.com/jwilleke/oidc-auth-server/issues/12) — Hardening checklist tests from activescott/auth#83
-- [#8](https://github.com/jwilleke/oidc-auth-server/issues/8) — Device authorization grant (RFC 8628) with host approval page
 
 ## 🟡 P2
 
