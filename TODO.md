@@ -18,6 +18,7 @@ last_updated: "2026-10-02"
 
 ## 🟠 P1
 
+- [#34](https://github.com/jwilleke/oidc-auth-server/issues/34) — Publish @jwilleke/oidc-auth-server to an npm registry on each release
 - [#33](https://github.com/jwilleke/oidc-auth-server/issues/33) — Audit event names collide with ngdpbase's registry
 - [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
 
@@ -27,7 +28,6 @@ last_updated: "2026-10-02"
 
 ## 🔵 In review
 
-- [#27](https://github.com/jwilleke/oidc-auth-server/issues/27) — Production host for oidc.nerdsbythehour.com: decide where people sign in
 - [#13](https://github.com/jwilleke/oidc-auth-server/issues/13) — [EPIC] First release: embedded, hardened OIDC authorization server
 
 ## ⏸ Deferred
@@ -39,5 +39,6 @@ last_updated: "2026-10-02"
 - [#30](https://github.com/jwilleke/oidc-auth-server/issues/30) — Deploy oidc.nerdsbythehour.com through mj-infra-flux
 - [#29](https://github.com/jwilleke/oidc-auth-server/issues/29) — Release workflow: publish ghcr.io/jwilleke/oidc-auth-server:X.Y.Z on each release tag
 - [#28](https://github.com/jwilleke/oidc-auth-server/issues/28) — PostgreSQL storage adapter for the production host
+- [#27](https://github.com/jwilleke/oidc-auth-server/issues/27) — Production host for oidc.nerdsbythehour.com: decide where people sign in
 
 <!-- KIT:END -->
