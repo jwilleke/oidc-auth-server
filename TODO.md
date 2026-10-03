@@ -18,6 +18,9 @@ last_updated: "2026-10-02"
 
 ## 🟠 P1
 
+- [#23](https://github.com/jwilleke/oidc-auth-server/issues/23) — Default scope-claims: add the OIDC Core 5.4 address and phone scopes
+- [#22](https://github.com/jwilleke/oidc-auth-server/issues/22) — Tests for confidential clients (client secret at the token endpoint)
+- [#21](https://github.com/jwilleke/oidc-auth-server/issues/21) — Per-client PKCE exemption for confidential clients (require_pkce: false)
 - [#12](https://github.com/jwilleke/oidc-auth-server/issues/12) — Hardening checklist tests from activescott/auth#83
 
 ## 🟡 P2
