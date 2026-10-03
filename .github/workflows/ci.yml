@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, develop]
 
+# Least privilege, declared rather than inherited from the repository default (#36).
+permissions:
+  contents: read
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -66,6 +70,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # every commit, so the history scan below sees deleted secrets too
 
       - name: Install gitleaks
         env:
@@ -81,6 +87,10 @@ jobs:
 
       - name: Scan the tree
         run: gitleaks dir . -c .gitleaks.toml --no-banner --redact -v
+
+      # A secret committed and later deleted is gone from the tree but not from history (#37).
+      - name: Scan the history
+        run: gitleaks git . -c .gitleaks.toml --no-banner --redact -v
 
   build:
     needs: lint-and-test

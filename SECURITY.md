@@ -4,6 +4,7 @@ This document outlines security best practices and policies for this project. Al
 
 ## Table of Contents
 
+- [Reporting a Vulnerability](#reporting-a-vulnerability)
 - [Secret Management](#secret-management)
 - [Dependency Management](#dependency-management)
 - [Code Security](#code-security)
@@ -12,6 +13,18 @@ This document outlines security best practices and policies for this project. Al
 - [Data Protection](#data-protection)
 - [Deployment Security](#deployment-security)
 - [Security Incident Response](#security-incident-response)
+
+## Reporting a Vulnerability
+
+`oidc-auth-server` is an authorization server: a flaw in it can hand out access to other people's accounts. Please report vulnerabilities privately.
+
+- __Use GitHub's private vulnerability reporting:__ the repository's __Security__ tab → *Report a vulnerability*. Never open a public issue, pull request or discussion for a suspected vulnerability.
+- __Include__ the affected version or commit, the configuration involved, steps to reproduce, and what an attacker gains. A failing test is the most useful form.
+- __What happens next:__ the report is acknowledged, confirmed or declined, fixed in a private fork where needed, released, and then disclosed through a GitHub security advisory crediting the reporter unless they ask otherwise.
+
+### Supported Versions
+
+The latest released `0.x` minor receives security fixes. Pre-1.0, fixes are not backported to older minors.
 
 ## Secret Management
 

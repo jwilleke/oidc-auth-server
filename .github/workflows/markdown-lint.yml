@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, main]
 
+# Least privilege, declared rather than inherited from the repository default (#36).
+permissions:
+  contents: read
+
 jobs:
   markdown-lint:
     runs-on: ubuntu-latest
