@@ -4,7 +4,13 @@
 
 It is a thin, hardened wrapper around [node-oidc-provider](https://github.com/panva/node-oidc-provider) (MIT, OpenID Certified). The host app keeps sign-in: it says who the person is, how they signed in (`amr`, `acr`), and whether they approved the request. This package issues and checks the tokens.
 
-Status: early, pre-1.0. Released versions are listed under [Releases](https://github.com/jwilleke/oidc-auth-server/releases); publishing to npm is tracked in [#34](https://github.com/jwilleke/oidc-auth-server/issues/34). Security issues: see [SECURITY.md](SECURITY.md#reporting-a-vulnerability).
+Status: early, pre-1.0. Published on npm as [`@jwilleke/oidc-auth-server`](https://www.npmjs.com/package/@jwilleke/oidc-auth-server); release notes under [Releases](https://github.com/jwilleke/oidc-auth-server/releases).
+
+```bash
+npm install @jwilleke/oidc-auth-server
+```
+
+Requires Node.js 20 or later (`engines` in package.json). Security issues: see [SECURITY.md](SECURITY.md#reporting-a-vulnerability).
 
 ## What it provides
 
