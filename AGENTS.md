@@ -323,6 +323,7 @@ npm run typecheck        # TypeScript type checking without emit
 ## Notes & Context
 
 - __Deployment:__ the operator's instance is served at `https://oidc.nerdsbythehour.com` (operator, 2026-10-02). Set as `oidc-auth-server.issuer` in the gitignored `config/app-custom-config.json`; the shipped defaults stay host-neutral.
+- __Deployed by [mj-infra-flux](https://github.com/jwilleke/mj-infra-flux)__ (operator, 2026-10-03): Flux, Kustomize, SOPS-encrypted secrets. Releases reach it as a public GHCR image tagged with the bare semver (`ghcr.io/jwilleke/oidc-auth-server:X.Y.Z`); its Flux `ImagePolicy` follows a semver range and rewrites the `$imagepolicy` marker in the app's deployment. Changes there go through PRs or issues on that repo, never a direct push.
 
 Add any additional notes, context, or information that agents should know here. Examples:
 
