@@ -10,7 +10,7 @@
   "_comment_acr_values": "The acr values the host's sign-in can produce, advertised in discovery. Empty means the host reports none.",
   "oidc-auth-server.acr-values": [],
 
-  "_comment_scope_claims": "Claims released per scope, beyond openid (which always carries sub, acr, amr and auth_time). Defaults are OIDC Core 5.4 profile and email. A map: a host adds a scope without restating these.",
+  "_comment_scope_claims": "Claims released per scope, beyond openid (which always carries sub, acr, amr and auth_time). Defaults are the four OIDC Core 5.4 scopes: profile, email, address and phone. A map: a host adds a scope without restating these.",
   "oidc-auth-server.scope-claims": {
     "profile": [
       "name",
@@ -28,7 +28,9 @@
       "locale",
       "updated_at"
     ],
-    "email": ["email", "email_verified"]
+    "email": ["email", "email_verified"],
+    "address": ["address"],
+    "phone": ["phone_number", "phone_number_verified"]
   },
 
   "_comment_clients": "Statically registered clients, as node-oidc-provider client metadata.",

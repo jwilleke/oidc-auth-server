@@ -73,6 +73,15 @@ const auth = createAuthServer(optionsFromConfig(config, { interactionUrl, findAc
 
 Options passed directly to `createAuthServer` take the shipped defaults for anything left unset.
 
+### PKCE exemption for confidential clients
+
+PKCE (S256) is required from every client. A confidential client — one that authenticates at the token endpoint with a secret or key — may opt out with `require_pkce: false` in its client metadata, for server-side apps and test tools that do not send a code challenge (the [OpenID Connect Playground](https://openidconnect.net/) is one: code flow, `client_secret` in the token request, no PKCE). A public client (`token_endpoint_auth_method: "none"`) with the exemption refuses the boot. A challenge an exempt client does send is still verified.
+
+```json
+{ "client_id": "playground", "client_secret": "…", "token_endpoint_auth_method": "client_secret_post",
+  "require_pkce": false, "redirect_uris": ["https://openidconnect.net/callback"] }
+```
+
 ### Device flow
 
 Set `oidc-auth-server.device-flow.enabled` to `true`. The device calls `/device/auth`; the person opens `/device`, enters the code, and is sent to the host's interaction route like any sign-in. `auth.interactions.details()` returns `deviceFlow: true` there, so the host can require step-up before approving a device. Pass `deviceFlow.pages` to `createAuthServer` to render the code pages in the host's own markup.

@@ -64,6 +64,21 @@ describe('assertSafeOptions', () => {
     ).toThrow(/absolute URL/);
   });
 
+  it('refuses a PKCE exemption on a public client', () => {
+    expect(() =>
+      assertSafeOptions(
+        baseOptions({
+          clients: [{ client_id: 'spa', token_endpoint_auth_method: 'none', require_pkce: false }]
+        })
+      )
+    ).toThrow(/client spa: require_pkce: false is allowed only for a confidential client/);
+    expect(() =>
+      assertSafeOptions(
+        baseOptions({ clients: [{ client_id: 'web', client_secret: 's', require_pkce: false }] })
+      )
+    ).not.toThrow();
+  });
+
   it('names every problem in one error', () => {
     expect(() =>
       assertSafeOptions(baseOptions({ issuer: 'nope', cookieKeys: [], jwks: { keys: [] } }))

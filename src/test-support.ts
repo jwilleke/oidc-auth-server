@@ -7,7 +7,14 @@ import type { AuthServerOptions } from './options.js';
 
 /** The stub host's accounts. */
 export const ACCOUNTS: Record<string, Record<string, unknown>> = {
-  alice: { name: 'Alice Example', email: 'alice@example.com', email_verified: true }
+  alice: {
+    name: 'Alice Example',
+    email: 'alice@example.com',
+    email_verified: true,
+    phone_number: '+1 555 0100',
+    phone_number_verified: true,
+    address: { locality: 'Columbus', region: 'OH', country: 'US' }
+  }
 };
 
 let cachedJwks: JWKS | undefined;

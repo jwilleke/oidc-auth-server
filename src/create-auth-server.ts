@@ -18,7 +18,7 @@ import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
 import { createMemoryAdapter } from './memory-adapter.js';
 import { allowMetadataFetch, guardedFetch } from './outgoing-fetch.js';
-import { assertSafeOptions, type AuthServerOptions } from './options.js';
+import { assertSafeOptions, isConfidential, type AuthServerOptions } from './options.js';
 
 export interface AuthServer {
   /** The underlying node-oidc-provider instance. */
@@ -47,7 +47,7 @@ function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | u
  * Build a hardened node-oidc-provider. Unsafe options throw before anything listens.
  *
  * Fixed, not configurable: authorization code flow only, PKCE required for every client
- * (node-oidc-provider accepts S256 only), the provider's development login pages off, and token
+ * (node-oidc-provider accepts S256 only) unless a confidential client sets require_pkce: false, the provider's development login pages off, and token
  * ids hashed before they reach the host's storage, and refresh tokens rotated on every use.
  */
 export function createAuthServer(options: AuthServerOptions): AuthServer {
@@ -115,7 +115,23 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
       RefreshToken: ttl.refreshToken,
       DeviceCode: ttl.deviceCode
     },
-    pkce: { required: () => true },
+    // PKCE for every client, unless a confidential client opts out with require_pkce: false
+    // (operator, 2026-10-03). A challenge an exempt client does send is still verified.
+    pkce: { required: (_ctx, client) => client.metadata().require_pkce !== false },
+    extraClientMetadata: {
+      properties: ['require_pkce'],
+      validator: (_ctx, key, value, metadata) => {
+        if (key !== 'require_pkce' || value === undefined) return;
+        if (typeof value !== 'boolean') {
+          throw new errors.InvalidClientMetadata('require_pkce must be a boolean');
+        }
+        if (value === false && !isConfidential(metadata)) {
+          throw new errors.InvalidClientMetadata(
+            'require_pkce: false is allowed only for a confidential client'
+          );
+        }
+      }
+    },
     fetch: guardedFetch(),
     features: {
       devInteractions: { enabled: false },

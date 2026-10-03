@@ -6,6 +6,7 @@ import { ACCOUNTS, baseOptions, Browser, decodeJwt, listen, pkcePair } from './t
 
 const REDIRECT_URI = 'http://127.0.0.1/cb';
 const API = 'https://api.example.com';
+const WEB_SECRET = 'a-confidential-client-secret-for-tests';
 
 type HostRoute = (auth: AuthServer, req: IncomingMessage, res: ServerResponse) => Promise<void>;
 
@@ -49,6 +50,25 @@ beforeAll(async () => {
             token_endpoint_auth_method: 'none',
             redirect_uris: [REDIRECT_URI],
             grant_types: ['authorization_code', 'refresh_token'],
+            response_types: ['code']
+          },
+          {
+            client_id: 'web',
+            client_secret: WEB_SECRET,
+            application_type: 'native',
+            token_endpoint_auth_method: 'client_secret_basic',
+            redirect_uris: [REDIRECT_URI],
+            grant_types: ['authorization_code'],
+            response_types: ['code']
+          },
+          {
+            client_id: 'legacy-web',
+            client_secret: WEB_SECRET,
+            application_type: 'native',
+            token_endpoint_auth_method: 'client_secret_post',
+            require_pkce: false,
+            redirect_uris: [REDIRECT_URI],
+            grant_types: ['authorization_code'],
             response_types: ['code']
           }
         ]
@@ -212,6 +232,17 @@ describe('UserInfo', () => {
     const { access_token } = await signedInTokens('openid profile');
     const claims = (await (await userinfo(access_token)).json()) as Record<string, unknown>;
     expect(claims.name).toBe('Alice Example');
+    expect(claims.email).toBeUndefined();
+  });
+
+  it('releases the OIDC Core 5.4 phone and address scopes', async () => {
+    const { access_token } = await signedInTokens('openid phone address');
+    const claims = (await (await userinfo(access_token)).json()) as Record<string, unknown>;
+    expect(claims).toMatchObject({
+      phone_number: '+1 555 0100',
+      phone_number_verified: true,
+      address: { locality: 'Columbus', region: 'OH', country: 'US' }
+    });
     expect(claims.email).toBeUndefined();
   });
 
@@ -428,5 +459,105 @@ describe('audit', () => {
       accountId: 'alice'
     });
     expect(JSON.stringify(audited)).not.toContain(access_token);
+  });
+});
+
+describe('confidential clients', () => {
+  const basic = (id: string, secret: string): string =>
+    `Basic ${Buffer.from(`${id}:${secret}`).toString('base64')}`;
+
+  async function codeFor(clientId: string, params: Record<string, string>): Promise<URL> {
+    host = signInAlice;
+    const { url } = await new Browser(server.baseUrl).follow(
+      authorizePath({ client_id: clientId, ...params })
+    );
+    return new URL(url);
+  }
+
+  it('completes code flow with PKCE and client_secret_basic', async () => {
+    const { verifier, challenge } = pkcePair();
+    const redirect = await codeFor('web', {
+      code_challenge: challenge,
+      code_challenge_method: 'S256'
+    });
+    const response = await fetch(`${server.baseUrl}/token`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basic('web', WEB_SECRET)
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: redirect.searchParams.get('code')!,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: verifier
+      })
+    });
+    expect(response.status).toBe(200);
+    expect(decodeJwt(((await response.json()) as { id_token: string }).id_token).sub).toBe('alice');
+  });
+
+  it('refuses a wrong secret and never records the secret', async () => {
+    const { verifier, challenge } = pkcePair();
+    const redirect = await codeFor('web', {
+      code_challenge: challenge,
+      code_challenge_method: 'S256'
+    });
+    audited.length = 0;
+    const response = await fetch(`${server.baseUrl}/token`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: basic('web', 'not-the-secret')
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: redirect.searchParams.get('code')!,
+        redirect_uri: REDIRECT_URI,
+        code_verifier: verifier
+      })
+    });
+    expect(response.status).toBe(401);
+    expect(((await response.json()) as Tokens).error).toBe('invalid_client');
+    const serialized = JSON.stringify(audited);
+    expect(serialized).not.toContain('not-the-secret');
+    expect(serialized).not.toContain(WEB_SECRET);
+  });
+
+  it('still requires PKCE from a confidential client without the exemption', async () => {
+    const redirect = await codeFor('web', {});
+    expect(redirect.searchParams.get('error')).toBe('invalid_request');
+  });
+
+  it('lets an exempt client (require_pkce: false) use code flow without PKCE', async () => {
+    const redirect = await codeFor('legacy-web', {});
+    const code = redirect.searchParams.get('code');
+    expect(code).toBeTruthy();
+    const response = await tokenRequest({
+      client_id: 'legacy-web',
+      client_secret: WEB_SECRET,
+      grant_type: 'authorization_code',
+      code: code!,
+      redirect_uri: REDIRECT_URI
+    });
+    expect(response.status).toBe(200);
+  });
+
+  it('still verifies a challenge an exempt client chooses to send', async () => {
+    const { challenge } = pkcePair();
+    const redirect = await codeFor('legacy-web', {
+      code_challenge: challenge,
+      code_challenge_method: 'S256'
+    });
+    const response = await tokenRequest({
+      client_id: 'legacy-web',
+      client_secret: WEB_SECRET,
+      grant_type: 'authorization_code',
+      code: redirect.searchParams.get('code')!,
+      redirect_uri: REDIRECT_URI,
+      code_verifier: pkcePair().verifier
+    });
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as Tokens).error).toBe('invalid_grant');
   });
 });

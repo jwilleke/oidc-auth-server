@@ -53,7 +53,7 @@ export interface AuthServerOptions {
    * granted scopes name are released.
    */
   findAccount: (accountId: string) => Promise<Record<string, unknown> | undefined>;
-  /** Claims released per scope, beyond `openid`. Defaults to OIDC Core 5.4 profile and email. */
+  /** Claims released per scope, beyond `openid`. Defaults to OIDC Core 5.4 profile, email, address and phone. */
   scopeClaims?: Record<string, string[]>;
   /** Token, session and interaction lifetimes; unset entries take the shipped defaults. */
   ttl?: Partial<Ttl>;
@@ -82,6 +82,11 @@ export interface AuthServerOptions {
 }
 
 const MIN_COOKIE_KEY_LENGTH = 32;
+
+/** A client that authenticates at the token endpoint. node-oidc-provider's default is a secret. */
+export function isConfidential(metadata: { token_endpoint_auth_method?: string }): boolean {
+  return (metadata.token_endpoint_auth_method ?? 'client_secret_basic') !== 'none';
+}
 
 /**
  * Refuse to build a server from unsafe options. Throws one error naming every problem, so a
@@ -126,6 +131,14 @@ export function assertSafeOptions(options: AuthServerOptions): void {
 
   if (typeof options.findAccount !== 'function') {
     problems.push('findAccount must be a function');
+  }
+
+  for (const client of options.clients ?? []) {
+    if (client.require_pkce === false && !isConfidential(client)) {
+      problems.push(
+        `client ${String(client.client_id)}: require_pkce: false is allowed only for a confidential client`
+      );
+    }
   }
 
   for (const [indicator, server] of Object.entries(options.resourceServers ?? {})) {
