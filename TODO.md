@@ -18,8 +18,6 @@ last_updated: "2026-10-02"
 
 ## 🟠 P1
 
-- [#25](https://github.com/jwilleke/oidc-auth-server/issues/25) — docs/deploying.md: bare metal, Docker, Kubernetes
-- [#24](https://github.com/jwilleke/oidc-auth-server/issues/24) — trust-proxy setting; refuse plain HTTP to an https issuer
 - [#12](https://github.com/jwilleke/oidc-auth-server/issues/12) — Hardening checklist tests from activescott/auth#83
 
 ## 🟡 P2
