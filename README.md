@@ -119,6 +119,8 @@ npm run smoke -- https://oidc.example.com     # the same checks against a deploy
 
 The example keeps everything in memory, so it runs only with an `http` issuer (development mode). Under an `https` issuer `createAuthServer` refuses to start until a storage adapter is supplied, as it should; a public deployment needs one, plus `OIDC_AUTH_SERVER_JWKS` and `OIDC_AUTH_SERVER_COOKIE_KEYS`.
 
+Deploying a host on bare metal, in Docker or on Kubernetes: [docs/deploying.md](docs/deploying.md).
+
 Agent and contributor rules are in [AGENTS.md](AGENTS.md).
 
 ## Background
