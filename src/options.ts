@@ -14,6 +14,18 @@ export interface Ttl {
   deviceCode: number;
 }
 
+/**
+ * How the person signed in, as `findAccount` receives it: what the host reported at sign-in
+ * (`acr`, `amr`) and when (`authTime`, epoch seconds). Undefined when the request carries no
+ * sign-in. A host can refuse an account here — for a sign-in older than its last password
+ * change, or below the level a claim needs — and the request fails closed.
+ */
+export interface SignInContext {
+  acr?: string;
+  amr?: string[];
+  authTime?: number;
+}
+
 /** An API that accepts this server's access tokens. Keyed by resource indicator. */
 export interface ResourceServer {
   /** Scopes the API accepts, space-separated. */
@@ -52,7 +64,10 @@ export interface AuthServerOptions {
    * account no longer exists or is disabled — which fails the request closed. Only the claims the
    * granted scopes name are released.
    */
-  findAccount: (accountId: string) => Promise<Record<string, unknown> | undefined>;
+  findAccount: (
+    accountId: string,
+    signIn?: SignInContext
+  ) => Promise<Record<string, unknown> | undefined>;
   /** Claims released per scope, beyond `openid`. Defaults to OIDC Core 5.4 profile, email, address and phone. */
   scopeClaims?: Record<string, string[]>;
   /** Token, session and interaction lifetimes; unset entries take the shipped defaults. */

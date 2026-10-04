@@ -45,7 +45,7 @@ const auth = createAuthServer({
   clients: [{ client_id: 'app', token_endpoint_auth_method: 'none', redirect_uris: ['…'] }],
   acrValues: ['aal1', 'aal2'],
   interactionUrl: (uid) => `/interaction/${uid}`,
-  findAccount: async (accountId) => users.claimsFor(accountId), // undefined fails closed
+  findAccount: async (accountId, signIn) => users.claimsFor(accountId, signIn), // undefined fails closed
   audit: (event) => auditManager.record(event) // events named in oidc-auth-server.audit.events
 });
 
@@ -78,6 +78,10 @@ const auth = createAuthServer(optionsFromConfig(config, { interactionUrl, findAc
 ```
 
 Options passed directly to `createAuthServer` take the shipped defaults for anything left unset.
+
+### Refusing a stale sign-in
+
+`findAccount(accountId, signIn)` receives how and when the person signed in: `{ acr, amr, authTime }` (epoch seconds), taken from the code, refresh token or access token the request carries. Return `undefined` to refuse, and the request fails closed: a refresh answers `invalid_grant`, UserInfo `401`. A host ends app access after a password change this way, by refusing any `authTime` older than the change. UserInfo still reports only `acr` and `amr`.
 
 ### Mounting under a path
 

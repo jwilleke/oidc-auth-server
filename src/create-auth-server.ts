@@ -18,7 +18,12 @@ import { hashingAdapter } from './hashing-adapter.js';
 import { interactionHelpers, type InteractionHelpers } from './interactions.js';
 import { createMemoryAdapter } from './memory-adapter.js';
 import { allowMetadataFetch, guardedFetch } from './outgoing-fetch.js';
-import { assertSafeOptions, isConfidential, type AuthServerOptions } from './options.js';
+import {
+  assertSafeOptions,
+  isConfidential,
+  type AuthServerOptions,
+  type SignInContext
+} from './options.js';
 
 export interface AuthServer {
   /** The underlying node-oidc-provider instance. */
@@ -32,15 +37,30 @@ export interface AuthServer {
 }
 
 /**
- * The sign-in's `acr` and `amr`, from whichever grant source the request carries — or, at
- * UserInfo, from the access token they were copied onto. Never from the host's account claims.
+ * How the person signed in — `acr`, `amr` and when (`authTime`, epoch seconds) — from whichever
+ * grant source the request carries, from the access token they were copied onto (UserInfo), or
+ * from the provider session (the authorization request). Never from the host's account claims.
  */
-function signInOf(ctx: KoaContextWithOIDC): { acr?: string; amr?: string[] } | undefined {
+function signInOf(ctx: KoaContextWithOIDC): SignInContext | undefined {
   const { AuthorizationCode, RefreshToken, DeviceCode, AccessToken } = ctx.oidc.entities;
   const source = AuthorizationCode ?? RefreshToken ?? DeviceCode;
-  if (source) return { acr: source.acr, amr: source.amr };
-  const extra = AccessToken?.extra as { acr?: string; amr?: string[] } | undefined;
-  return extra ? { acr: extra.acr, amr: extra.amr } : undefined;
+  if (source) return { acr: source.acr, amr: source.amr, authTime: source.authTime };
+  const extra = AccessToken?.extra as
+    | { acr?: string; amr?: string[]; auth_time?: number }
+    | undefined;
+  if (extra) return { acr: extra.acr, amr: extra.amr, authTime: extra.auth_time };
+  const session = ctx.oidc.session;
+  if (session?.accountId) {
+    return { acr: session.acr, amr: session.amr, authTime: session.authTime() };
+  }
+  return undefined;
+}
+
+/** What UserInfo reports about the sign-in: `acr` and `amr`, never the host's other context. */
+function reportedSignIn(
+  signIn: SignInContext | undefined
+): { acr?: string; amr?: string[] } | undefined {
+  return signIn ? { acr: signIn.acr, amr: signIn.amr } : undefined;
 }
 
 /** The issuer's path without a trailing slash: '' for an issuer at the root, '/oidc' at <host>/oidc. */
@@ -165,15 +185,22 @@ export function createAuthServer(options: AuthServerOptions): AuthServer {
     },
     // How the person signed in rides on the access token, so UserInfo can report it: the host's
     // account lookup knows the person, not the sign-in.
-    extraTokenClaims: (ctx, token) => (token.kind === 'AccessToken' ? signInOf(ctx) : undefined),
+    // auth_time rides along too, so the host's account lookup can refuse a sign-in older than,
+    // say, the account's last password change.
+    extraTokenClaims: (ctx, token) => {
+      if (token.kind !== 'AccessToken') return undefined;
+      const signIn = signInOf(ctx);
+      return signIn ? { acr: signIn.acr, amr: signIn.amr, auth_time: signIn.authTime } : undefined;
+    },
     findAccount: async (ctx, sub) => {
-      const claims = await options.findAccount(sub);
+      const signIn = signInOf(ctx);
+      const claims = await options.findAccount(sub, signIn);
       if (!claims) return undefined;
       return {
         accountId: sub,
         claims: (use) => ({
           ...claims,
-          ...(use === 'userinfo' ? signInOf(ctx) : undefined),
+          ...(use === 'userinfo' ? reportedSignIn(signIn) : undefined),
           sub
         })
       };

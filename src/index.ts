@@ -1,6 +1,11 @@
 export { createAuthServer, type AuthServer } from './create-auth-server.js';
 export { createMemoryAdapter } from './memory-adapter.js';
-export { assertSafeOptions, type AuthServerOptions, type Ttl } from './options.js';
+export {
+  assertSafeOptions,
+  type AuthServerOptions,
+  type SignInContext,
+  type Ttl
+} from './options.js';
 export {
   defaultConfig,
   loadConfig,
