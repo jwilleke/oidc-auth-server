@@ -86,4 +86,4 @@ jobs:
         env:
           # Empty when trusted publishing is configured; npm then uses OIDC.
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --loglevel verbose
