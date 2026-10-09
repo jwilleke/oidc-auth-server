@@ -6,11 +6,25 @@ last_updated: "2026-10-02"
 
 # TODO
 
+<!-- RESUME:START -->
+## ▶ Resume here — 2026-10-09
+
+- Last worked on: npm publishing. 0.2.0 was published by hand (account 2FA blocked a token-based CI publish), Trusted Publisher configured; later sessions released v0.3.0, v0.3.1 and v0.4.0 from CI with no token (path mount #32, issuer-host fix, types, findAccount receives the sign-in)
+- Branch / state: master, clean, in sync with origin, 0 stashes
+- Running / in-flight: none — CI and Release green at dc6fff0; example server stopped
+- Parked / half-done: none
+- Next steps:
+  - #42 (P0): prove state, nonce, single-use PKCE code and email_verified handling with tests
+  - Close the in-review items #32, #39, #40, then epic #41 (repo is public, settings on)
+  - #27: decide where the standalone server's users sign in — unblocks epic #31
+  - #43: back-channel logout
+- Blockers / significant notes: SSH port 22 to GitHub times out on this machine — push over HTTPS with `gh auth git-credential`. Revoke the unused npm tokens from 2026-10-03. The ngdpbase checkout is shared with another session (OidcManager epic ngdpbase#1578)
+<!-- RESUME:END -->
 <!-- KIT:START — managed by mjs-project-template; add your own sections below KIT:END -->
 
 ## 🔴 P0 — Security & Critical
 
-*None.*
+- [#42](https://github.com/jwilleke/oidc-auth-server/issues/42) — [BUG] Prove state, nonce, single-use PKCE code and email_verified handling with tests
 
 ## 🟣 Epics
 
@@ -19,8 +33,7 @@ last_updated: "2026-10-02"
 
 ## 🟠 P1
 
-- [#34](https://github.com/jwilleke/oidc-auth-server/issues/34) — Publish @jwilleke/oidc-auth-server to npmjs on each release
-- [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
+- [#43](https://github.com/jwilleke/oidc-auth-server/issues/43) — [FEATURE] Back-Channel Logout (and RP-Initiated end-session) so logging out reaches every app
 
 ## 🟡 P2
 
@@ -30,6 +43,7 @@ last_updated: "2026-10-02"
 
 - [#40](https://github.com/jwilleke/oidc-auth-server/issues/40) — Make the repository public
 - [#39](https://github.com/jwilleke/oidc-auth-server/issues/39) — Enable public-repo security settings
+- [#32](https://github.com/jwilleke/oidc-auth-server/issues/32) — Tests for an issuer mounted under a path (`<host>/oidc`)
 
 ## ⏸ Deferred
 
